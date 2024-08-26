@@ -36,7 +36,6 @@ public class TableUtil {
         if (firstIsCheckbox) {
             table.getColumnModel().getColumn(CmdTable.col_check).setCellRenderer(new MyBooleanRenderer(table));
             table.getColumnModel().getColumn(CmdTable.col_check).setCellEditor(JBTable.createBooleanEditor());
-            ;
         }
 
         // 通用单元格渲染设置

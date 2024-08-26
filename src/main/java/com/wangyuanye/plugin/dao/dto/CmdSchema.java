@@ -58,7 +58,7 @@ public class CmdSchema implements Serializable {
     }
 
     public @NotNull String getName() {
-        if(name == null) {
+        if (name == null) {
             return "";
         }
         return name;

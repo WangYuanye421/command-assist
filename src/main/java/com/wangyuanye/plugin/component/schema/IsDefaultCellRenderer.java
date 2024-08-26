@@ -1,11 +1,6 @@
 package com.wangyuanye.plugin.component.schema;
 
-import com.wangyuanye.plugin.component.command.CmdTable;
-import com.wangyuanye.plugin.component.command.CmdTableModel;
-import com.wangyuanye.plugin.util.UiUtil;
-
 import javax.swing.*;
-import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 import java.awt.*;

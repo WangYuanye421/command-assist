@@ -21,7 +21,7 @@
                 class="com.wangyuanye.plugin.component.toolbar.ManageSchemaAction" />
         <!--分类下拉框-->
         <action id="ca_schema_command" text="Schema"
-                class="com.wangyuanye.plugin.component.toolbar.SchemaBomboAction" />
+                class="com.wangyuanye.plugin.component.toolbar.SchemaComboBoxAction" />
         <!--新增命令-->
         <action id="ca_add_command" text="Add"
                 class="com.wangyuanye.plugin.component.toolbar.AddAction" />
@@ -52,9 +52,13 @@
                 class="com.wangyuanye.plugin.component.schema.SchemaCancelAction" />
 
         <!-- 定义操作组 -->
-        <group id="command_group" class="com.wangyuanye.plugin.component.toolbar.MyActionGroup" text="My Group">
+        <group id="command_group1" class="com.wangyuanye.plugin.component.toolbar.MyActionGroup" text="My Group1">
             <!-- 通过 group-id 引用 -->
             <add-to-group group-id="ToolWindowContextMenu" anchor="first"/>
+        </group>
+        <group id="command_group2" class="com.wangyuanye.plugin.component.toolbar.MyActionGroup2" text="My Group2">
+            <!-- 通过 group-id 引用 -->
+            <add-to-group group-id="ToolWindowContextMenu"/>
         </group>
     </actions>
 

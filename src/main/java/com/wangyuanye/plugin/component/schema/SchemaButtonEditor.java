@@ -2,7 +2,6 @@ package com.wangyuanye.plugin.component.schema;
 
 import com.intellij.openapi.actionSystem.impl.ActionButton;
 import com.intellij.ui.table.JBTable;
-import com.wangyuanye.plugin.component.command.CmdTableModel;
 import com.wangyuanye.plugin.util.UiUtil;
 
 import javax.swing.*;
@@ -34,7 +33,7 @@ public class SchemaButtonEditor extends AbstractCellEditor implements TableCellE
     public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
         panel.removeAll();
         DefaultTableModel model = (DefaultTableModel) table.getModel();
-        Boolean isEdit = (Boolean) model.getValueAt(row, 4);
+        Boolean isEdit = (Boolean) model.getValueAt(row, SchemaTable.col_edit);
         if (isEdit) {
             panel.add(confirmBtn);
             panel.add(Box.createHorizontalStrut(7));

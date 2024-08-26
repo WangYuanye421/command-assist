@@ -1,12 +1,17 @@
 package com.wangyuanye.plugin.util;
 
 import com.intellij.ide.ui.UISettings;
+import com.intellij.notification.Notification;
+import com.intellij.notification.NotificationType;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.colors.EditorColorsManager;
 import com.intellij.openapi.editor.colors.EditorColorsScheme;
+import com.intellij.openapi.project.Project;
 import com.wangyuanye.plugin.component.toolWindow.MyToolWindow;
 import com.wangyuanye.plugin.dao.dto.CmdDataSave;
 import com.wangyuanye.plugin.dao.dto.SchemaDataSave;
+import org.jetbrains.annotations.NotNull;
+
 
 /**
  * 插件开发常用api
@@ -16,17 +21,55 @@ import com.wangyuanye.plugin.dao.dto.SchemaDataSave;
  **/
 public class IdeaApiUtil {
 
-    public static MyToolWindow getAppService() {
+    /**
+     * 获取当前项目
+     *
+     * @return
+     */
+    public static @NotNull Project getProject() {
+        MyToolWindow projectToolWindow = getCurrentProjectToolWindow();
+        return projectToolWindow.getCurrentProject();
+    }
+
+    /**
+     * 获取当前项目的toolWindow
+     *
+     * @return MyToolWindow
+     */
+    public static MyToolWindow getCurrentProjectToolWindow() {
         return ApplicationManager.getApplication().getService(MyToolWindow.class);
     }
 
     public static SchemaDataSave getSchemaService() {
-        SchemaDataSave service = ApplicationManager.getApplication().getService(SchemaDataSave.class);
-        return service;
+        return ApplicationManager.getApplication().getService(SchemaDataSave.class);
     }
 
     public static CmdDataSave getCmdService() {
         return ApplicationManager.getApplication().getService(CmdDataSave.class);
+    }
+
+    /**
+     * 获取通知对象
+     *
+     * @return Notification
+     */
+    public static Notification getNotification() {
+        return new Notification(
+                "CommandAssistNotificationGroup", // 通知组ID
+                "Command Assist 通知",        // 通知标题
+                NotificationType.INFORMATION // 通知类型 (INFORMATION, WARNING, ERROR)
+        );
+    }
+
+    /**
+     * 发送提示信息
+     *
+     * @param tip 提示信息
+     */
+    public static void myTips(String tip) {
+        Notification notification = getNotification();
+        notification.setContent(MessagesUtil.buildBalloon(tip));
+        notification.notify(getProject());
     }
 
     /**

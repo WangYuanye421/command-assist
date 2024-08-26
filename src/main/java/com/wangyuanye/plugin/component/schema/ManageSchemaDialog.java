@@ -1,6 +1,7 @@
 package com.wangyuanye.plugin.component.schema;
 
 import com.intellij.icons.AllIcons;
+import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.DefaultLogger;
 import com.intellij.openapi.diagnostic.Logger;
@@ -8,8 +9,12 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.table.JBTable;
+import com.wangyuanye.plugin.component.command.CmdTableModel;
+import com.wangyuanye.plugin.component.toolWindow.MyToolWindow;
+import com.wangyuanye.plugin.component.toolbar.SchemaComboBoxAction;
 import com.wangyuanye.plugin.dao.dto.CmdSchema;
 import com.wangyuanye.plugin.dao.dto.SchemaDataSave;
+import com.wangyuanye.plugin.util.IdeaApiUtil;
 import com.wangyuanye.plugin.util.MessagesUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -18,6 +23,7 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
+import java.util.*;
 
 /**
  * @author wangyuanye
@@ -26,11 +32,13 @@ import java.util.List;
 public class ManageSchemaDialog extends DialogWrapper {
     public static Logger logger = new DefaultLogger("[schema dialog]");
     private static JBTable table;
+    private Project project;
 
     public ManageSchemaDialog(@Nullable Project project) {
         super(project);
         setTitle(MessagesUtil.getMessage("manage_cate"));
         init();
+        this.project = project;
     }
 
     public static JTable getTable() {
@@ -90,11 +98,62 @@ public class ManageSchemaDialog extends DialogWrapper {
         addBtn.addActionListener(e -> {
             System.out.println("btn add ");
             DefaultTableModel tableModel = (DefaultTableModel) table.getModel();
-            tableModel.addRow(new Object[]{null, null, null, null, true});
+            tableModel.addRow(new Object[]{false, "", false, "", false, ""});
         });
         removeBtn.addActionListener(e -> {
             System.out.println("btn remove ");
+            removeSchema();
         });
+    }
+
+    private void removeSchema() {
+        Map<Integer, String> idMap = new HashMap<>();
+        DefaultTableModel model = (DefaultTableModel) table.getModel();
+        for (int i = 0; i < table.getRowCount(); i++) {
+            Boolean isSelected = (Boolean) model.getValueAt(i, SchemaTable.col_checked);  // 获取第一列的值
+            if (isSelected) {
+                // 获取被勾选行的id
+                idMap.put(i, (String) model.getValueAt(i, SchemaTable.col_id));
+            }
+        }
+        if (!idMap.isEmpty()) {
+            System.out.println("idMap.size: " + idMap.size());
+            // todo 提示
+//            ConfirmationDialog messageDialog = new ConfirmationDialog(project,"分类下的所有命令将被删除", "确认删除?", null,null);
+//            if (!messageDialog.isOK()) {
+//                return;
+//            }
+            System.out.println("点击了确认");
+            // 删除schema,包括关联的cmd
+            SchemaDataSave schemaDataSave = IdeaApiUtil.getSchemaService();
+            schemaDataSave.deleteSchemaList(idMap.values().stream().toList());
+            SchemaComboBoxAction anAction = (SchemaComboBoxAction) ActionManager.getInstance().getAction("ca_schema_command");
+            CmdSchema selectedItem = (CmdSchema) anAction.getComboBox().getSelectedItem();
+            // 移除table
+            Set<Integer> indexSet = idMap.keySet();
+            // 将 Set 转换为 List
+            List<Integer> indexList = new ArrayList<>(indexSet);
+            // 对 List 进行降序排序, 防止table索引混乱
+            Collections.sort(indexList, Collections.reverseOrder());
+            for (Integer id : indexList) {
+                model.removeRow(id);
+                // 如果删除的是当前分类,移除cmdTableModel的数据
+                String schemaId = idMap.get(id);
+                if (schemaId.equals(selectedItem.getId())) {
+                    MyToolWindow toolWindow = IdeaApiUtil.getCurrentProjectToolWindow();
+                    JTable cmdTable = toolWindow.getTable();
+                    CmdTableModel cmdTableModel = (CmdTableModel) cmdTable.getModel();
+                    for (int i = 0; i < cmdTableModel.getRowCount(); i++) {
+                        cmdTableModel.removeRow(i);
+                    }
+                }
+            }
+            model.fireTableDataChanged();
+            // 更新工具类combobox
+            anAction.initComboBoxData(schemaDataSave.list());
+            table.revalidate();
+            table.repaint();
+        }
     }
 
     private void buildTable(List<CmdSchema> schemaList) {

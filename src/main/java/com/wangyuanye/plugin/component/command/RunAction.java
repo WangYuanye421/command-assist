@@ -3,15 +3,12 @@ package com.wangyuanye.plugin.component.command;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.diagnostic.DefaultLogger;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;
 import com.wangyuanye.plugin.component.toolWindow.MyToolWindow;
-import com.wangyuanye.plugin.component.toolWindow.MyToolWindowFactory;
-import com.wangyuanye.plugin.services.MyService;
-import com.wangyuanye.plugin.services.MyServiceImpl;
+import com.wangyuanye.plugin.util.IdeaApiUtil;
 import com.wangyuanye.plugin.util.MessagesUtil;
+import com.wangyuanye.plugin.util.UiUtil;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -25,23 +22,21 @@ import java.util.regex.Pattern;
  * @date 2024/8/20
  **/
 public class RunAction extends AnAction {
-    public static Logger logger = new DefaultLogger("[Cmd Run Action]");
-    private MyService myService;
 
     public RunAction() {
         super("run", "run cmd", AllIcons.Actions.Execute);
-        this.myService = MyServiceImpl.instance;
     }
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
+        System.out.println("run action");
         Project project = e.getProject();
         String cmd = getSelectCmd();
         if (cmd == null || cmd.isEmpty()) return;
         cmd = processCmd(cmd);
         if (project != null) {
             // 获取终端
-            ToolWindow openTerminal = MyToolWindowFactory.getOpenTerminal();
+            ToolWindow openTerminal = UiUtil.getOpenTerminal(IdeaApiUtil.getProject());
             runInTerminal(project, cmd, openTerminal);
         }
     }
@@ -49,7 +44,6 @@ public class RunAction extends AnAction {
     private String processCmd(String cmd) {
         String result = cmd;
         // lsof -i:{%Parm%}
-        logger.info("原始命令 : " + result);
         System.out.println("原始命令 : " + result);
         // 正则表达式来匹配 {%Parm%} 格式的占位符
         Pattern pattern = Pattern.compile("\\{%([a-zA-Z0-9_]+)%\\}");
@@ -74,7 +68,6 @@ public class RunAction extends AnAction {
                 result = result.replace(key, value);
             }
         }
-        logger.info("待执行命令 : " + result);
         System.out.println("待执行命令 : " + result);
         return result;
     }
@@ -87,7 +80,8 @@ public class RunAction extends AnAction {
     }
 
     private String getSelectCmd() {
-        JTable table = MyToolWindow.getTable();
+        MyToolWindow appService = IdeaApiUtil.getCurrentProjectToolWindow();
+        JTable table = appService.getTable();
         CmdTableModel model = (CmdTableModel) table.getModel();
         int selectedRow = table.getSelectedRow();
         return (String) model.getValueAt(selectedRow, CmdTable.col_cmd_name);

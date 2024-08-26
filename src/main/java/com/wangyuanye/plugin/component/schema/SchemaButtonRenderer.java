@@ -15,22 +15,22 @@ import java.awt.*;
 public class SchemaButtonRenderer extends DefaultTableCellRenderer {
     private final JPanel editedPanel;
 
+
     public SchemaButtonRenderer() {
         // 初始化编辑状态下的面板
         editedPanel = new JPanel();
+        editedPanel.add(UiUtil.getActionButton("ca_confirm_command", "tbl_confirm"));
+        editedPanel.add(Box.createHorizontalStrut(7));
+        editedPanel.add(UiUtil.getActionButton("ca_cancel_command", "tbl_cancel"));
     }
 
     @Override
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-        editedPanel.removeAll();
         DefaultTableModel model = (DefaultTableModel) table.getModel();
-        Boolean isEdit = (Boolean) model.getValueAt(row, 4);
+        Boolean isEdit = (Boolean) model.getValueAt(row, SchemaTable.col_edit);
         if (isEdit) {
-            editedPanel.add(UiUtil.getActionButton("ca_confirm_schema", "tbl_confirm"));
-            editedPanel.add(Box.createHorizontalStrut(7));
-            editedPanel.add(UiUtil.getActionButton("ca_cancel_schema", "tbl_cancel"));
             return editedPanel;
         }
-        return editedPanel;
+        return new JPanel();
     }
 }

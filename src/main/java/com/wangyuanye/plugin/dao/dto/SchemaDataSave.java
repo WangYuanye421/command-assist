@@ -8,13 +8,14 @@ import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.intellij.util.xmlb.annotations.Tag;
 import com.intellij.util.xmlb.annotations.XCollection;
-import com.wangyuanye.plugin.component.toolWindow.MyToolWindowFactory;
+import com.wangyuanye.plugin.util.IdeaApiUtil;
 import com.wangyuanye.plugin.util.MessagesUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * 命名空间持久层
@@ -26,6 +27,7 @@ import java.util.List;
 @State(name = "commandSchema", storages = {@Storage("command_assist/schemas.xml")})
 public final class SchemaDataSave implements PersistentStateComponent<SchemaDataSave.MyState> {
     private SchemaDataSave.MyState myState = new SchemaDataSave.MyState();
+    private Boolean schemaDataLoaded = false;
     Notification notification = new Notification(
             "CommandAssistNotificationGroup", // 通知组ID
             "Command Assist 通知",        // 通知标题
@@ -59,17 +61,22 @@ public final class SchemaDataSave implements PersistentStateComponent<SchemaData
     @Override
     public void loadState(@NotNull MyState state) {
         myState = state;
+        schemaDataLoaded = true;
     }
 
-    public CmdSchema getDefaultSchema(){
+    public Boolean getSchemaDataLoaded() {
+        return schemaDataLoaded;
+    }
+
+    public @Nullable CmdSchema getDefaultSchema() {
         CmdSchema result = null;
         List<CmdSchema> list = list();
         for (CmdSchema schema : list) {
-            if(schema.getDefaultSchema()){
+            if (schema.getDefaultSchema()) {
                 result = schema;
             }
         }
-        if(result == null && !list.isEmpty()){
+        if (result == null && !list.isEmpty()) {
             result = list.get(0);
         }
         return result;
@@ -77,7 +84,15 @@ public final class SchemaDataSave implements PersistentStateComponent<SchemaData
 
     //列表
     public @NotNull List<CmdSchema> list() {
-        return this.getState().getSchemas();
+        List<CmdSchema> schemas = this.getState().getSchemas();
+        Optional<CmdSchema> first = schemas.stream().filter(CmdSchema::getDefaultSchema).findFirst();
+        if (first.isPresent()) {
+            CmdSchema cmdSchema = first.get();
+            schemas.remove(cmdSchema);
+            // 默认schema添加到开头
+            schemas.add(0, cmdSchema);
+        }
+        return schemas;
     }
 
     // 获取单个
@@ -97,7 +112,7 @@ public final class SchemaDataSave implements PersistentStateComponent<SchemaData
         boolean nameExist = checkSchemaExist(schema.getName(), schema.getId(), schemas);
         if (nameExist) {
             notification.setContent(MessagesUtil.buildBalloon("[" + schema.getName() + "] 已存在"));
-            notification.notify(MyToolWindowFactory.getProject());
+            notification.notify(IdeaApiUtil.getProject());
             return;
         }
         schemas.add(schema);
@@ -111,7 +126,7 @@ public final class SchemaDataSave implements PersistentStateComponent<SchemaData
         boolean nameExist = checkSchemaExist(schema.getName(), schema.getId(), schemas);
         if (nameExist) {
             notification.setContent(MessagesUtil.buildBalloon("[" + schema.getName() + "] 已存在"));
-            notification.notify(MyToolWindowFactory.getProject());
+            notification.notify(IdeaApiUtil.getProject());
             return;
         }
         for (CmdSchema ele : schemas) {
@@ -124,8 +139,8 @@ public final class SchemaDataSave implements PersistentStateComponent<SchemaData
         this.getState().setSchemas(schemas);
     }
 
-    private void cancelOtherDefault(String id, boolean defaultSchema,@NotNull List<CmdSchema> schemas){
-        if(defaultSchema){
+    private void cancelOtherDefault(String id, boolean defaultSchema, @NotNull List<CmdSchema> schemas) {
+        if (defaultSchema) {
             for (CmdSchema schema : schemas) {
                 if (schema.getDefaultSchema() && !schema.getId().equals(id)) {
                     schema.setDefaultSchema(false);
@@ -156,10 +171,15 @@ public final class SchemaDataSave implements PersistentStateComponent<SchemaData
         return flag;
     }
 
+    public void deleteSchemaList(@NotNull List<String> ids) {
+        for (String id : ids) {
+            deleteSchema(id);
+        }
+    }
+
     // 删除
     public void deleteSchema(@NotNull String schemaId) {
         List<CmdSchema> schemas = this.getState().getSchemas();
-        // todo 查询是否有cmd,要求确认
         CmdSchema delete = null;
         for (CmdSchema ele : schemas) {
             if (schemaId.equals(ele.getId())) {
@@ -167,6 +187,9 @@ public final class SchemaDataSave implements PersistentStateComponent<SchemaData
             }
         }
         if (delete != null) {
+            CmdDataSave cmdService = IdeaApiUtil.getCmdService();
+            // 删除cmd
+            cmdService.deleteCmdBySchemaId(delete.getId());
             schemas.remove(delete);
             this.getState().setSchemas(schemas);
         }

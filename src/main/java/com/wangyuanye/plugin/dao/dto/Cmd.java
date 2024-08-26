@@ -1,11 +1,9 @@
 package com.wangyuanye.plugin.dao.dto;
 
 
-import com.intellij.openapi.components.Service;
-import com.intellij.openapi.components.State;
-import com.intellij.openapi.components.Storage;
 import com.intellij.util.xmlb.annotations.Attribute;
 import com.intellij.util.xmlb.annotations.Tag;
+import com.intellij.util.xmlb.annotations.Transient;
 
 import java.io.Serializable;
 import java.util.UUID;
@@ -24,9 +22,10 @@ public class Cmd implements Serializable {
     private String name;
     @Attribute("remark")
     private String remark;
+    @Transient
+    private Boolean isEdit = false;
 
     public Cmd() {
-        this.cmdId = UUID.randomUUID().toString();
     }
 
 
@@ -67,5 +66,13 @@ public class Cmd implements Serializable {
 
     public void setRemark(String remark) {
         this.remark = remark;
+    }
+
+    public Boolean getEdit() {
+        return isEdit;
+    }
+
+    public void setEdit(Boolean edit) {
+        isEdit = edit;
     }
 }

@@ -4,7 +4,12 @@ import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.Presentation;
 import com.intellij.openapi.actionSystem.impl.ActionButton;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.wm.ToolWindow;
+import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.util.ui.JBUI;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
 
@@ -15,6 +20,31 @@ import java.awt.*;
 public class UiUtil {
     private static ActionManager actionManager = ActionManager.getInstance();
 
+    public static @Nullable ToolWindow getOpenTerminal(@NotNull Project project) {
+        // 尝试获取终端
+        ToolWindow terminalWindow = ToolWindowManager.getInstance(project).getToolWindow("Terminal");
+        if (terminalWindow == null) {
+            IdeaApiUtil.myTips("请先安装并启用终端");
+            return null;
+        }
+        if (!terminalWindow.isAvailable()) {
+            IdeaApiUtil.myTips("终端不可用,命令已复制到剪切板");
+            return null;
+        }
+        if (terminalWindow.isVisible()) {// 不可见
+            terminalWindow.show();
+        }
+        if (terminalWindow.isActive()) {// 未激活
+            terminalWindow.activate(null);
+        }
+        return terminalWindow;
+    }
+
+    /**
+     * 获取actionManager
+     *
+     * @return
+     */
     public static ActionManager getActionManager() {
         if (actionManager == null) {
             actionManager = ActionManager.getInstance();

@@ -1,8 +1,6 @@
 package com.wangyuanye.plugin.component.schema;
 
 import com.intellij.ui.table.JBTable;
-import com.wangyuanye.plugin.component.command.CmdTable;
-import com.wangyuanye.plugin.component.command.CmdTableModel;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -12,6 +10,7 @@ import java.awt.*;
 
 /**
  * 监听文本变化
+ *
  * @author wangyuanye
  * @date 2024/8/19
  **/

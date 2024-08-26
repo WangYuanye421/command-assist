@@ -6,7 +6,6 @@ import com.wangyuanye.plugin.dao.dto.CmdSchema;
 import com.wangyuanye.plugin.util.MessagesUtil;
 import com.wangyuanye.plugin.util.TableUtil;
 
-import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
@@ -77,7 +76,7 @@ public class SchemaTable {
                     false,
                     schemaList.get(i).getName(),
                     schemaList.get(i).getDefaultSchema(),
-                    null,
+                    "",
                     false,
                     schemaList.get(i).getId()
             };

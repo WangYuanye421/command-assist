@@ -4,6 +4,8 @@ import javax.swing.table.DefaultTableModel;
 
 public class CmdTableModel extends DefaultTableModel {
 
+    public CmdTableModel() {
+    }
 
     public CmdTableModel(Object[][] data, Object[] columnNames) {
         super(data, columnNames);

@@ -16,7 +16,7 @@ import org.jetbrains.annotations.NotNull;
 public class ManageSchemaAction extends AnAction {
 
     public ManageSchemaAction() {
-        super("管理分类", "操作分类数据", AllIcons.Actions.EditScheme);
+        super("管理分类", "操作分类数据", AllIcons.Modules.EditFolder);
     }
 
     @Override

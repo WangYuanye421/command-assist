@@ -1,11 +1,7 @@
 package com.wangyuanye.plugin.component.schema;
 
-import com.wangyuanye.plugin.component.command.CmdTable;
-
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableCellEditor;
-import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
@@ -28,11 +24,11 @@ public class IsDefaultCellEditor extends DefaultCellEditor {
             public void itemStateChanged(ItemEvent itemEvent) {
                 boolean selected = ((JCheckBox) itemEvent.getItem()).isSelected();
 
-                if(selected){
+                if (selected) {
                     int row = table.getEditingRow();
                     DefaultTableModel model = (DefaultTableModel) table.getModel();
                     for (int i = 0; i < table.getRowCount(); i++) {
-                        if(i != row) {
+                        if (i != row) {
                             // 将其他默认取消掉
                             model.setValueAt(false, i, SchemaTable.col_isdefault);
                         }

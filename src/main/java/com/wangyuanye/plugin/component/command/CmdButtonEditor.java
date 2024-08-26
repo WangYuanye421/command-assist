@@ -2,7 +2,6 @@ package com.wangyuanye.plugin.component.command;
 
 import com.intellij.openapi.actionSystem.impl.ActionButton;
 import com.intellij.ui.table.JBTable;
-import com.wangyuanye.plugin.component.toolWindow.MyToolWindowFactory;
 import com.wangyuanye.plugin.util.UiUtil;
 
 import javax.swing.*;
@@ -41,12 +40,8 @@ public class CmdButtonEditor extends AbstractCellEditor implements TableCellEdit
             panel.add(Box.createHorizontalStrut(7));
             panel.add(cancelBtn);
         } else {
-            if (MyToolWindowFactory.TERMINAL_OPEN) {
-                // 终端打开后才能执行
-                panel.add(runBtn);
-            }
+            panel.add(runBtn);
         }
-
         return panel;
     }
 }

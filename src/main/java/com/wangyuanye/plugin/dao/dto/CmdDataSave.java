@@ -8,14 +8,12 @@ import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.intellij.util.xmlb.annotations.Tag;
 import com.intellij.util.xmlb.annotations.XCollection;
-import com.wangyuanye.plugin.component.toolWindow.MyToolWindowFactory;
-import com.wangyuanye.plugin.util.MessagesUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collector;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -28,6 +26,8 @@ import java.util.stream.Collectors;
 @State(name = "command", storages = {@Storage("command_assist/commands.xml")})
 public final class CmdDataSave implements PersistentStateComponent<CmdDataSave.MyState> {
     private CmdDataSave.MyState myState = new CmdDataSave.MyState();
+    private Boolean cmdDataLoaded = false;
+
     Notification notification = new Notification(
             "CommandAssistNotificationGroup", // 通知组ID
             "Command Assist 通知",        // 通知标题
@@ -41,8 +41,8 @@ public final class CmdDataSave implements PersistentStateComponent<CmdDataSave.M
         @XCollection(elementName = "command")
         public List<Cmd> cmds;
 
-        public List<Cmd> getCmds() {
-            return cmds;
+        public @NotNull List<Cmd> getCmds() {
+            return cmds == null ? new ArrayList<>() : cmds;
         }
 
         public void setCmds(List<Cmd> cmds) {
@@ -58,6 +58,11 @@ public final class CmdDataSave implements PersistentStateComponent<CmdDataSave.M
     @Override
     public void loadState(@NotNull MyState state) {
         myState = state;
+        cmdDataLoaded = true;
+    }
+
+    public Boolean getCmdDataLoaded() {
+        return cmdDataLoaded;
     }
 
     //列表
@@ -65,14 +70,24 @@ public final class CmdDataSave implements PersistentStateComponent<CmdDataSave.M
         return this.getState().getCmds();
     }
 
-    public @NotNull List<Cmd> list(@NotNull String schemaId) {
+    public @NotNull List<Cmd> list(String schemaId) {
+        if (schemaId == null || schemaId.isEmpty()) return new ArrayList<>();
         List<Cmd> list = list();
         return list.stream().filter(e -> schemaId.equals(e.getSchemaId())).collect(Collectors.toList());
     }
 
-    // 获取单个
-    public @Nullable Cmd getByCondition(String name, String remark) {
-        return null;
+    /**
+     * 获取单个
+     *
+     * @param schemaId
+     * @param cmdId
+     * @return
+     */
+    public @Nullable Cmd getById(@NotNull String schemaId, @NotNull String cmdId) {
+        List<Cmd> list = list();
+        Optional<Cmd> first = list.stream().filter(e -> schemaId.equals(e.getSchemaId()) && cmdId.equals(e.getCmdId()))
+                .findFirst();
+        return first.orElse(null);
     }
 
     // 新增
@@ -94,15 +109,27 @@ public final class CmdDataSave implements PersistentStateComponent<CmdDataSave.M
         this.getState().setCmds(cmdList);
     }
 
-    public void deleteCmdList(@NotNull List<String> cmdIds){
+    /**
+     * 删除整个分类的cmd
+     *
+     * @param schemaId
+     */
+    public void deleteCmdBySchemaId(@NotNull String schemaId) {
+        List<Cmd> deleteList = list(schemaId);
+        if (deleteList.isEmpty()) return;
+        List<Cmd> all = list();
+        all.removeAll(deleteList);
+    }
+
+    public void deleteCmdList(@NotNull List<String> cmdIds) {
         for (String id : cmdIds) {
             deleteCmd(id);
         }
     }
+
     // 删除
     public void deleteCmd(@NotNull String cmdId) {
         List<Cmd> cmdList = this.getState().getCmds();
-        // todo 查询是否有cmd,要求确认
         Cmd delete = null;
         for (Cmd ele : cmdList) {
             if (cmdId.equals(ele.getCmdId())) {
