@@ -1,65 +1,27 @@
 
 <!-- Plugin description -->
-**IntelliJ Platform Plugin Template** is a repository that provides a pure template to make it easier to create a new plugin project (check the [Creating a repository from a template][gh:template] article).
+## Why develop this plugin? What can it do?
+ I am a Java developer. In my daily development work, I frequently need to start various services through the terminal. 
+ Everyone has their own notes or cheat sheets, but switching windows, searching, and copying commands is too cumbersome. 
+ So I developed this plugin, which can:
+- Define namespaces to manage different commands.
+- Copy commands to the terminal window with one click.
+- Support dynamic parameters in commands.
 
-The main goal of this template is to speed up the setup phase of plugin development for both new and experienced developers by preconfiguring the project scaffold and CI, linking to the proper documentation pages, and keeping everything organized.
+I hope this plugin will help you boost your development efficiency.
 
-[gh:template]: https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template
+## 为什么开发这个插件?它能做什么?
+ 我是一名Java开发人员.在日常开发中,需要通过终端频繁的启动各种服务,我知道大家都有自己的备忘录,但是切换窗口,寻找,复制...太麻烦了.
+ 所以我开发了这款插件,它可以:
+- 定义命名空间,管理不同的命令
+- 一键复制到终端窗口
+- 命令支持动态参数
+
+希望这个插件能够帮助你提升开发效率.
 <!-- Plugin description end -->
 
-If you're still not quite sure what this is all about, read our introduction: [What is the IntelliJ Platform?][docs:intro]
 
 
 
-# 草稿
-- 常用命令列表 (可运行)
-- cheatsheet
-- 语言作为空间隔离
-  - 
-  
-.command_assist
-
-  commonly_used_list
-    
-  cheatsheets todo 备忘录,格式不做处理,保留用户格式?
-    java
-    python
-    shell
-
-```json
-// config.json 
-
-// commonly_used_list.json
-{
-  "schemas": [
-    {
-      "name": "zsh",
-      "cmds": [
-        {
-          "cmd": "ls",
-          "remark": "显示文件"
-        },
-        {
-          "cmd": "ls -a",
-          "remark": "显示文件 所有"
-        }
-      ]
-    },
-    {
-      "name": "java",
-      "cmds": [
-        {
-          "cmd": "javac",
-          "remark": "javac"
-        },
-        {
-          "cmd": "java -p",
-          "remark": "java -p"
-        }
-      ]
-    }
-  ]
-}
 
 
-```

@@ -7,9 +7,9 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.colors.EditorColorsManager;
 import com.intellij.openapi.editor.colors.EditorColorsScheme;
 import com.intellij.openapi.project.Project;
-import com.wangyuanye.plugin.component.toolWindow.MyToolWindow;
-import com.wangyuanye.plugin.dao.dto.CmdDataSave;
-import com.wangyuanye.plugin.dao.dto.SchemaDataSave;
+import com.wangyuanye.plugin.dao.CmdDataSave;
+import com.wangyuanye.plugin.dao.SchemaDataSave;
+import com.wangyuanye.plugin.toolWindow.PluginWindow;
 import org.jetbrains.annotations.NotNull;
 
 
@@ -27,17 +27,12 @@ public class IdeaApiUtil {
      * @return
      */
     public static @NotNull Project getProject() {
-        MyToolWindow projectToolWindow = getCurrentProjectToolWindow();
+        PluginWindow projectToolWindow = getToolWindow();
         return projectToolWindow.getCurrentProject();
     }
 
-    /**
-     * 获取当前项目的toolWindow
-     *
-     * @return MyToolWindow
-     */
-    public static MyToolWindow getCurrentProjectToolWindow() {
-        return ApplicationManager.getApplication().getService(MyToolWindow.class);
+    public static PluginWindow getToolWindow() {
+        return ApplicationManager.getApplication().getService(PluginWindow.class);
     }
 
     public static SchemaDataSave getSchemaService() {

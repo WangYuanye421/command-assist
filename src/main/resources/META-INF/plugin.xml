@@ -1,82 +1,53 @@
 <!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 <idea-plugin>
-    <id>com.wangyuanye.plugin</id>
-    <name>Command Assist</name>
-    <vendor>JetBrains</vendor>
+	<id>com.wangyuanye.plugin</id>
+	<name>Command Assist</name>
+	<vendor>Yuanye.Wang</vendor>
 
-    <depends>com.intellij.modules.platform</depends>
+	<depends>com.intellij.modules.platform</depends>
 
-    <resource-bundle>messages.messages</resource-bundle>
+	<resource-bundle>messages.messages</resource-bundle>
 
-    <actions>
-        <!-- 定义操作 -->
-        <!-- label -->
-        <action id="schema_label" text="SchemaLabel"
-                class="com.wangyuanye.plugin.component.schema.SchemaLabelAction" />
-        <action id="cmd_label" text="CmdLabel"
-                class="com.wangyuanye.plugin.component.toolbar.CmdLabelAction" />
+	<actions>
+		<!-- 定义操作 -->
 
-        <!--编辑分类-->
-        <action id="ca_edit_schema" text="EditSchema"
-                class="com.wangyuanye.plugin.component.toolbar.ManageSchemaAction" />
-        <!--分类下拉框-->
-        <action id="ca_schema_command" text="Schema"
-                class="com.wangyuanye.plugin.component.toolbar.SchemaComboBoxAction" />
-        <!--新增命令-->
-        <action id="ca_add_command" text="Add"
-                class="com.wangyuanye.plugin.component.toolbar.AddAction" />
-        <!--删除命令-->
-        <action id="ca_delete_command" text="Delete"
-                class="com.wangyuanye.plugin.component.toolbar.DeleteAction" />
-        <!--搜索命令-->
-        <action id="ca_find_command" text="Find"
-                class="com.wangyuanye.plugin.component.toolbar.FindAction" />
-        <!--运行命令-->
-        <action id="ca_run_command" text="Run"
-                class="com.wangyuanye.plugin.component.command.RunAction" />
-        <!--确认命令-->
-        <action id="ca_confirm_command" text="Confirm"
-                class="com.wangyuanye.plugin.component.command.ConfirmAction" />
-        <!--取消命令-->
-        <action id="ca_cancel_command" text="Cancel"
-                class="com.wangyuanye.plugin.component.command.CancelAction" />
-        <!--多选命令-->
-        <action id="ca_checkbox_command" text="Choose"
-                class="com.wangyuanye.plugin.component.command.CheckBoxAction" />
+		<!--编辑分类-->
+		<action id="ca_edit_schema" text="EditSchema"
+				class="com.wangyuanye.plugin.component.ActionManageSchema"/>
+		<!--分类下拉框-->
+		<action id="ca_schema_command" text="Schema"
+				class="com.wangyuanye.plugin.component.ActionSchemaComboBox"/>
+		<!--运行命令-->
+		<action id="ca_run_command" text="Run"
+				class="com.wangyuanye.plugin.component.ActionRun"/>
 
-        <!--确认命令-->
-        <action id="ca_confirm_schema" text="Confirm"
-                class="com.wangyuanye.plugin.component.schema.SchemaConfirmAction" />
-        <!--取消命令-->
-        <action id="ca_cancel_schema" text="Cancel"
-                class="com.wangyuanye.plugin.component.schema.SchemaCancelAction" />
 
-        <!-- 定义操作组 -->
-        <group id="command_group1" class="com.wangyuanye.plugin.component.toolbar.MyActionGroup" text="My Group1">
-            <!-- 通过 group-id 引用 -->
-            <add-to-group group-id="ToolWindowContextMenu" anchor="first"/>
-        </group>
-        <group id="command_group2" class="com.wangyuanye.plugin.component.toolbar.MyActionGroup2" text="My Group2">
-            <!-- 通过 group-id 引用 -->
-            <add-to-group group-id="ToolWindowContextMenu"/>
-        </group>
-    </actions>
+		<!-- 定义操作组 -->
+		<!--		<group id="command_group1" class="com.wangyuanye.plugin.component.toolbar.MyActionGroup" text="My Group1">-->
+		<!--			&lt;!&ndash; 追加到什么地方 &ndash;&gt;-->
+		<!--			&lt;!&ndash;<add-to-group group-id="ToolWindowContextMenu" anchor="first"/>&ndash;&gt;-->
+		<!--		</group>-->
 
-    <extensions defaultExtensionNs="com.intellij">
+	</actions>
 
-        <!--        插件配置页-->
-        <projectConfigurable instance="com.wangyuanye.plugin.setting.MyPluginConfigurable"
-                             displayName="My Plugin Settings"
-                             id = "com.wangyuanye.plugin" />
-        <toolWindow factoryClass="com.wangyuanye.plugin.component.toolWindow.MyToolWindowFactory" id="MyToolWindow"/>
+	<extensions defaultExtensionNs="com.intellij">
 
-        <!--通知-->
-        <notificationGroup displayType="BALLOON" id="CommandAssistNotificationGroup"/>
-    </extensions>
+		<!--        插件配置页-->
+		<!--        <projectConfigurable instance="com.wangyuanye.plugin.setting.MyPluginConfigurable"-->
+		<!--                             displayName="My Plugin Settings"-->
+		<!--                             id = "com.wangyuanye.plugin" />-->
+		<!--插件入口程序-->
+		<toolWindow factoryClass="com.wangyuanye.plugin.toolWindow.MyToolWindowFactory"
+					id="CommandAssist"
+		/>
 
-    <applicationListeners>
-<!--        <listener class="com.wangyuanye.plugin.component.listeners.MyApplicationActivationListener"-->
-<!--                  topic="com.intellij.openapi.application.ApplicationActivationListener"/>-->
-    </applicationListeners>
+		<!--通知-->
+		<notificationGroup displayType="BALLOON" id="CommandAssistNotificationGroup"/>
+	</extensions>
+
+	<applicationListeners>
+		<!--        <listener class="com.wangyuanye.plugin.component.listeners.MyApplicationActivationListener"-->
+		<!--                  topic="com.intellij.openapi.application.ApplicationActivationListener"/>-->
+	</applicationListeners>
 
 </idea-plugin>
