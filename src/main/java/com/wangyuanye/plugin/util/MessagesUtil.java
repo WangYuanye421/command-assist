@@ -85,7 +85,6 @@ public class MessagesUtil {
     public static void pastToTerminal(Project project, ToolWindow openTerminal) {
         if (openTerminal == null) {
             logger.warn("终端窗口未获取");
-            System.out.println("终端窗口未获取");
             return;
         }
         openTerminal.activate(() -> {
@@ -114,6 +113,7 @@ public class MessagesUtil {
             });
         });
     }
+
 
     public static String buildBalloon(String msg) {
         return "Command Assist: " + msg;

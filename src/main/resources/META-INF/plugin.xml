@@ -19,7 +19,9 @@
 				class="com.wangyuanye.plugin.component.ActionSchemaComboBox"/>
 		<!--运行命令-->
 		<action id="ca_run_command" text="Run"
-				class="com.wangyuanye.plugin.component.ActionRun"/>
+				class="com.wangyuanye.plugin.component.ActionRun" keymap="$default">
+			<keyboard-shortcut keymap="$default" first-keystroke="meta ENTER"/>
+		</action>
 
 
 		<!-- 定义操作组 -->
@@ -27,6 +29,8 @@
 		<!--			&lt;!&ndash; 追加到什么地方 &ndash;&gt;-->
 		<!--			&lt;!&ndash;<add-to-group group-id="ToolWindowContextMenu" anchor="first"/>&ndash;&gt;-->
 		<!--		</group>-->
+
+		<action id="tab_schema_close" class="com.wangyuanye.plugin.component.ActionCloseSchemaTab" text="Close Tab"/>
 
 	</actions>
 
@@ -38,7 +42,7 @@
 		<!--                             id = "com.wangyuanye.plugin" />-->
 		<!--插件入口程序-->
 		<toolWindow factoryClass="com.wangyuanye.plugin.toolWindow.MyToolWindowFactory"
-					id="CommandAssist"
+					id="CommandAssist" icon="AllIcons.Toolwindows.ToolWindowCommander"
 		/>
 
 		<!--通知-->
@@ -46,8 +50,12 @@
 	</extensions>
 
 	<applicationListeners>
-		<!--        <listener class="com.wangyuanye.plugin.component.listeners.MyApplicationActivationListener"-->
-		<!--                  topic="com.intellij.openapi.application.ApplicationActivationListener"/>-->
+		<listener class="com.wangyuanye.plugin.listeners.MyProjectManagerListener"
+				  topic="com.intellij.ide.AppLifecycleListener"
+		/>
+		<listener class="com.wangyuanye.plugin.listeners.MyProjectManagerListener"
+				  topic="com.intellij.openapi.project.ProjectManagerListener"
+		/>
 	</applicationListeners>
 
 </idea-plugin>

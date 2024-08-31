@@ -18,11 +18,14 @@ public class MySchemaModel extends AbstractTableModel implements ItemRemovable {
     };
     private final Class[] ourColumnClasses = new Class[]{String.class, Boolean.class};
 
-    private final List<MySchema> schemaList;
+    private List<MySchema> schemaList;
 
     MySchemaModel(List<MySchema> schemaList) {
         this.schemaList = schemaList;
+    }
 
+    public void setSchemaList(List<MySchema> schemaList) {
+        this.schemaList = schemaList;
     }
 
     @Override

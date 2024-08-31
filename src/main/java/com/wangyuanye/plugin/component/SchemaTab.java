@@ -1,17 +1,18 @@
 package com.wangyuanye.plugin.component;
 
-import com.intellij.icons.AllIcons;
 import com.intellij.openapi.Disposable;
-import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.wm.ToolWindow;
+import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.ui.*;
 import com.intellij.ui.scale.JBUIScale;
 import com.intellij.ui.table.JBTable;
+import com.intellij.ui.tabs.JBTabs;
 import com.intellij.ui.tabs.TabInfo;
-import com.intellij.ui.tabs.impl.JBTabsImpl;
 import com.wangyuanye.plugin.dao.CmdDataSave;
 import com.wangyuanye.plugin.dao.SchemaDataSave;
 import com.wangyuanye.plugin.dao.dto.MySchema;
+import com.wangyuanye.plugin.toolWindow.MyToolWindowFactory;
 import com.wangyuanye.plugin.util.IdeaApiUtil;
 import com.wangyuanye.plugin.util.MessagesUtil;
 import com.wangyuanye.plugin.util.MyTableUtil;
@@ -23,8 +24,8 @@ import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableColumn;
 import java.awt.*;
 import java.awt.event.MouseEvent;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * @author wangyuanye
@@ -44,7 +45,7 @@ public class SchemaTab implements Disposable {
         // 加载数据
         cmdService = IdeaApiUtil.getCmdService();
         schemaService = IdeaApiUtil.getSchemaService();
-        schemaList = schemaService.list();
+        schemaList = new ArrayList<>(schemaService.list());
         schemaModel = new MySchemaModel(schemaList);
         schemaTable = new JBTable(schemaModel);
         schemaTable.setShowGrid(false);
@@ -52,10 +53,13 @@ public class SchemaTab implements Disposable {
         schemaTable.setFocusable(false);
         schemaTable.getTableHeader().setReorderingAllowed(false);// 禁止列拖动
         MyTableUtil.setEmptyText(schemaTable);
+
     }
 
 
-    public TabInfo buildSchemaTab(JBTabsImpl jbTabs, ActionSchemaComboBox combobox) {
+    public TabInfo buildSchemaTab(JBTabs jbTabs, ActionSchemaComboBox combobox) {
+        schemaList = new ArrayList<>(schemaService.list());
+        schemaModel.setSchemaList(schemaList);
         // Column "name"
         TableColumn columnName = schemaTable.getColumnModel().getColumn(0);
         JTableHeader tableHeader = schemaTable.getTableHeader();
@@ -69,7 +73,8 @@ public class SchemaTab implements Disposable {
         int remarkColumnWidth = headerFontMetrics.stringWidth(schemaTable.getColumnName(1)) + JBUIScale.scale(20);
         isDefault.setPreferredWidth(remarkColumnWidth);
         isDefault.setMinWidth(remarkColumnWidth);
-
+        ToolWindow toolWindow = ToolWindowManager.getInstance(IdeaApiUtil.getProject()).getToolWindow(MyToolWindowFactory.myToolWindowId);
+        JComponent toolWindowComponent = toolWindow.getComponent();
 
         JPanel schemasPanel = new JPanel(new BorderLayout());
         schemasPanel.add(ToolbarDecorator.createDecorator(schemaTable)
@@ -78,14 +83,14 @@ public class SchemaTab implements Disposable {
                     public void run(AnActionButton button) {
                         stopEditing();
                         MySchema schemaAdd = new MySchema("", false);
-                        MySchemaDialog dialog = new MySchemaDialog(schemasPanel, schemaAdd, -1, schemaList);
+                        DialogMySchema dialog = new DialogMySchema(toolWindowComponent, schemaAdd, -1, schemaList);
+                        IdeaApiUtil.setRelatedLocation(dialog);
                         if (!dialog.showAndGet()) {
                             return;
                         }
-                        //logger.info("schema add. schema:" + schemaAdd.toString());
-                        System.out.println("schema add. schema:" + schemaAdd.toString());
+                        logger.info("schema add. schema:" + schemaAdd.toString());
                         schemaList.add(schemaAdd);
-                        //schemaService.addSchema(schemaAdd);// db
+                        schemaService.addSchema(schemaAdd);// db
                         int index = schemaList.size() - 1;
                         schemaModel.fireTableRowsInserted(index, index);
                         schemaTable.getSelectionModel().setSelectionInterval(index, index);
@@ -109,22 +114,12 @@ public class SchemaTab implements Disposable {
                         }
                         MySchema schemaToBeRemoved = schemaList.get(selectedIndex);
                         logger.info("schema remove. schema:" + schemaToBeRemoved.toString());
+                        schemaService.deleteSchema(schemaToBeRemoved.getId());
                         cmdService.deleteCmd(schemaToBeRemoved.getId());// db移除
                         TableUtil.removeSelectedItems(schemaTable);// 表移除
-                        schemaList.remove(selectedIndex);// list移除
                         combobox.initComboBoxData(schemaList, true);// 下拉框移除
                     }
-                }).addExtraAction(new AnActionButton(MessagesUtil.getMessage("schema.tab.close"), AllIcons.Actions.Cancel) {
-                    @Override
-                    public void actionPerformed(@NotNull AnActionEvent e) {
-                        System.out.println("关闭tab");
-                        List<TabInfo> tabs = jbTabs.getTabs();
-                        Optional<TabInfo> first = tabs.stream().filter(t -> SchemaTab.TAB_NAME.equals(t.getText())).findFirst();
-                        if (first.isPresent()) {
-                            jbTabs.removeTab(first.get());
-                        }
-                    }
-                })
+                }).addExtraAction(new ActionCloseSchemaTab(jbTabs))
                 .disableUpDownActions().createPanel(), BorderLayout.CENTER);
 
         // double-click
@@ -147,7 +142,8 @@ public class SchemaTab implements Disposable {
         }
         MySchema sourceSchema = schemaList.get(selectedIndex);
         MySchema schemaEdit = sourceSchema.clone();
-        MySchemaDialog dialog = new MySchemaDialog(schemaTable, schemaEdit, selectedIndex, schemaList);
+        DialogMySchema dialog = new DialogMySchema(schemaTable, schemaEdit, selectedIndex, schemaList);
+        IdeaApiUtil.setRelatedLocation(dialog);
         dialog.setTitle(MessagesUtil.getMessage("schema.dialog.edit.title"));
         if (!dialog.showAndGet()) {
             return;

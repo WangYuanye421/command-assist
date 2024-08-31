@@ -3,6 +3,7 @@ package com.wangyuanye.plugin.component;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.ValidationInfo;
+import com.intellij.ui.components.JBTextArea;
 import com.intellij.ui.components.JBTextField;
 import com.intellij.util.ui.FormBuilder;
 import com.wangyuanye.plugin.dao.dto.MyCmd;
@@ -18,16 +19,18 @@ import java.util.List;
  * @author wangyuanye
  * @date 2024/8/28
  **/
-public class MyCmdDialog extends DialogWrapper {
+public class DialogMyCmd extends DialogWrapper {
     private final MyCmd myCmd;
     private final JBTextField cmdField;
     private final JBTextField remarkField;
     private final int myCmdIndex;
     private final List<MyCmd> myExistingMyCmdList;
     private final JLabel helpIcon;
+    private Component parent;
 
-    MyCmdDialog(Component parent, MyCmd myCmd, int cmdIndex, List<MyCmd> existingMyCmdList) {
+    DialogMyCmd(Component parent, MyCmd myCmd, int cmdIndex, List<MyCmd> existingMyCmdList) {
         super(parent, true);
+        this.parent = parent;
         setSize(300, 120);
         myCmdIndex = cmdIndex;
         myExistingMyCmdList = existingMyCmdList;
@@ -35,11 +38,13 @@ public class MyCmdDialog extends DialogWrapper {
         setResizable(false);
         this.myCmd = myCmd;
         cmdField = new JBTextField(this.myCmd.getName());
+
         remarkField = new JBTextField(this.myCmd.getRemark());
         helpIcon = new JLabel(AllIcons.General.ContextHelp);
         helpIcon.setToolTipText(MessagesUtil.getMessage("cmd.name_label_tip"));
         init();
     }
+
 
     // 打开dialog后，光标聚焦组件
     @Override
@@ -54,7 +59,6 @@ public class MyCmdDialog extends DialogWrapper {
         super.doOKAction();
     }
 
-    // 不做校验
     @NotNull
     @Override
     protected List<ValidationInfo> doValidateAll() {
@@ -73,9 +77,6 @@ public class MyCmdDialog extends DialogWrapper {
 
     @Override
     protected JComponent createCenterPanel() {
-//        GridBagConstraints constraints = new GridBagConstraints();
-//        constraints.insets = new Insets(5, 5, 5, 5);
-//        constraints.fill = GridBagConstraints.HORIZONTAL;
         // 第一个文本框和提示标签
         JPanel panel1 = new JPanel(new BorderLayout());
         panel1.add(cmdField, BorderLayout.CENTER);

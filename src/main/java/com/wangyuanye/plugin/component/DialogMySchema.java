@@ -19,14 +19,14 @@ import java.util.Optional;
  * @author wangyuanye
  * @date 2024/8/28
  **/
-public class MySchemaDialog extends DialogWrapper {
+public class DialogMySchema extends DialogWrapper {
     private final MySchema mySchema;
     private final JBTextField nameField;
     private final JBCheckBox isDefaultcheckBox;
     private final int mySchemaIndex;
     private final List<MySchema> myExistingSchemaList;
 
-    MySchemaDialog(Component parent, MySchema schema, int cmdIndex, List<MySchema> existingSchemaList) {
+    DialogMySchema(Component parent, MySchema schema, int cmdIndex, List<MySchema> existingSchemaList) {
         super(parent, true);
         setSize(300, 120);
         mySchemaIndex = cmdIndex;
@@ -69,7 +69,7 @@ public class MySchemaDialog extends DialogWrapper {
             }
         }
         // 过滤出 默认为true的
-        Optional<MySchema> first = myExistingSchemaList.stream().filter(e -> e.getDefaultSchema()).findFirst();
+        Optional<MySchema> first = myExistingSchemaList.stream().filter(MySchema::getDefaultSchema).findFirst();
         if (first.isPresent() && selected) {
             return Collections.singletonList(new ValidationInfo(MessagesUtil.getMessage("schema.add.error_default_exist"), isDefaultcheckBox));
         }

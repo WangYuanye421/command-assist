@@ -1,5 +1,6 @@
 package com.wangyuanye.plugin;
 
+import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.testFramework.fixtures.BasePlatformTestCase;
 import com.wangyuanye.plugin.dao.SchemaDataSave;
@@ -35,5 +36,11 @@ public class SchemaTest extends BasePlatformTestCase {
         schemaService.deleteSchema(id);
         MySchema delete = schemaService.getById(id);
         assertNull(delete);
+    }
+
+    public void testIdeaConfig(){
+        PropertiesComponent propertiesComponent = PropertiesComponent.getInstance();
+        String shellPath = propertiesComponent.getValue("TerminalProjectOptionsProvider.shellPath");
+        System.out.println("Shell Path: " + shellPath);
     }
 }

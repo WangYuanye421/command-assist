@@ -4,12 +4,10 @@ package com.wangyuanye.plugin.dao.dto;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.util.xmlb.annotations.Attribute;
 import com.intellij.util.xmlb.annotations.Tag;
-import com.intellij.util.xmlb.annotations.Transient;
 import com.wangyuanye.plugin.util.MessagesUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
-import java.util.List;
 import java.util.UUID;
 
 /**
@@ -29,20 +27,13 @@ public class MySchema implements Serializable, Cloneable {
     // 是否默认
     @Attribute("defaultSchema")
     private boolean defaultSchema;
-    // 命令集
-    @Transient
-    private List<MyCmd> myCmdList;
-    @Transient
-    private boolean isEdit;
 
 
     public MySchema() {
-        this.id = UUID.randomUUID().toString();
     }
 
     public static MySchema getEmptyObj() {
         MySchema mySchema = new MySchema();
-        mySchema.setId(null);
         mySchema.setName(MessagesUtil.getMessage("schema.combobox.place"));
         return mySchema;
     }
@@ -100,31 +91,12 @@ public class MySchema implements Serializable, Cloneable {
         this.defaultSchema = defaultSchema;
     }
 
-
-    public List<MyCmd> getCmdList() {
-        return myCmdList;
-    }
-
-    public void setCmdList(List<MyCmd> myCmdList) {
-        this.myCmdList = myCmdList;
-    }
-
-    public boolean isEdit() {
-        return isEdit;
-    }
-
-    public void setEdit(boolean edit) {
-        isEdit = edit;
-    }
-
     @Override
     public String toString() {
         return "CmdSchema{" +
                 "id='" + id + '\'' +
                 ", name='" + name + '\'' +
                 ", defaultSchema='" + defaultSchema + '\'' +
-                ", cmdList=" + myCmdList +
-                ", isEdit=" + isEdit +
                 '}';
     }
 }

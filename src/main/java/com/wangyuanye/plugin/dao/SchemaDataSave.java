@@ -27,7 +27,6 @@ import java.util.List;
 @State(name = "commandSchema", storages = {@Storage("command_assist/schemas.xml")})
 public final class SchemaDataSave implements PersistentStateComponent<SchemaDataSave.MyState> {
     private SchemaDataSave.MyState myState = new SchemaDataSave.MyState();
-    private Boolean schemaDataLoaded = false;
     Notification notification = new Notification(
             "CommandAssistNotificationGroup", // 通知组ID
             "Command Assist 通知",        // 通知标题
@@ -41,6 +40,9 @@ public final class SchemaDataSave implements PersistentStateComponent<SchemaData
         @XCollection(elementName = "schema")
         public List<MySchema> schemas;
 
+        @Tag("flushFlag")
+        public Boolean flushFlag;// 标记数据是否已保存,用于监听器判断
+
         public @NotNull List<MySchema> getSchemas() {
             if (schemas == null) {
                 return new ArrayList<>();
@@ -50,6 +52,14 @@ public final class SchemaDataSave implements PersistentStateComponent<SchemaData
 
         public void setSchemas(List<MySchema> schemas) {
             this.schemas = schemas;
+        }
+
+        public Boolean getFlushFlag() {
+            return flushFlag;
+        }
+
+        public void setFlushFlag(Boolean flushFlag) {
+            this.flushFlag = flushFlag;
         }
     }
 
@@ -61,14 +71,11 @@ public final class SchemaDataSave implements PersistentStateComponent<SchemaData
     @Override
     public void loadState(@NotNull MyState state) {
         myState = state;
-        schemaDataLoaded = true;
+        myState.setFlushFlag(false);
     }
 
-    public Boolean getSchemaDataLoaded() {
-        return schemaDataLoaded;
-    }
 
-    public @Nullable MySchema getDefaultSchema() {
+    public @NotNull MySchema getDefaultSchema() {
         MySchema result = new MySchema();
         List<MySchema> list = list();
         for (MySchema schema : list) {
@@ -76,7 +83,7 @@ public final class SchemaDataSave implements PersistentStateComponent<SchemaData
                 result = schema;
             }
         }
-        if (result == null && !list.isEmpty()) {
+        if (result.getId() == null && !list.isEmpty()) {
             result = list.get(0);
         }
         return result;
@@ -101,21 +108,21 @@ public final class SchemaDataSave implements PersistentStateComponent<SchemaData
 
     // 新增
     public void addSchema(@NotNull MySchema schema) {
-        List<MySchema> schemas = this.getState().getSchemas();
+        List<MySchema> schemas = list();
         boolean nameExist = checkSchemaExist(schema.getName(), schema.getId(), schemas);
         if (nameExist) {
             notification.setContent(MessagesUtil.buildBalloon("[" + schema.getName() + "] 已存在"));
             notification.notify(IdeaApiUtil.getProject());
             return;
         }
-        schemas.add(schema);
         cancelOtherDefault(schema.getId(), schema.getDefaultSchema(), schemas);
+        schemas.add(schema);
         this.getState().setSchemas(schemas);
     }
 
     //更新
     public void updateSchema(@NotNull MySchema schema) {
-        List<MySchema> schemas = this.getState().getSchemas();
+        List<MySchema> schemas = list();
         boolean nameExist = checkSchemaExist(schema.getName(), schema.getId(), schemas);
         if (nameExist) {
             notification.setContent(MessagesUtil.buildBalloon("[" + schema.getName() + "] 已存在"));
@@ -172,7 +179,7 @@ public final class SchemaDataSave implements PersistentStateComponent<SchemaData
 
     // 删除
     public void deleteSchema(@NotNull String schemaId) {
-        List<MySchema> schemas = this.getState().getSchemas();
+        List<MySchema> schemas = list();
         MySchema delete = null;
         for (MySchema ele : schemas) {
             if (schemaId.equals(ele.getId())) {

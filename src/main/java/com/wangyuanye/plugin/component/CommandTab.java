@@ -5,8 +5,8 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.ui.*;
 import com.intellij.ui.scale.JBUIScale;
 import com.intellij.ui.table.JBTable;
+import com.intellij.ui.tabs.JBTabs;
 import com.intellij.ui.tabs.TabInfo;
-import com.intellij.ui.tabs.impl.JBTabsImpl;
 import com.wangyuanye.plugin.dao.CmdDataSave;
 import com.wangyuanye.plugin.dao.SchemaDataSave;
 import com.wangyuanye.plugin.dao.dto.MyCmd;
@@ -23,6 +23,8 @@ import javax.swing.table.TableColumn;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * 插件窗口
@@ -65,7 +67,8 @@ public final class CommandTab implements Disposable {
         commandTable.setModel(cmdModel);
     }
 
-    public TabInfo buildCommandTab(JBTabsImpl jbTabs, SchemaTab schemaTab) {
+    public TabInfo buildCommandTab(JBTabs jbTabs, SchemaTab schemaTab) {
+
         // Column "name"
         TableColumn columnName = commandTable.getColumnModel().getColumn(0);
         JTableHeader tableHeader = commandTable.getTableHeader();
@@ -73,6 +76,17 @@ public final class CommandTab implements Disposable {
         int nameColumnWidth = headerFontMetrics.stringWidth(commandTable.getColumnName(0) + JBUIScale.scale(20));
         columnName.setPreferredWidth(nameColumnWidth);
         columnName.setMinWidth(nameColumnWidth);
+        // 命令行美化
+//        columnName.setCellRenderer(new DefaultTableCellRenderer(){
+//            @Override
+//            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+//
+//                String cmd = (String) value;
+//                JLabel c = new JLabel();
+//                c.setText(beautyCmd(cmd));
+//                return c;
+//            }
+//        });
 
         // Column "remark"
         TableColumn remark = commandTable.getColumnModel().getColumn(1);
@@ -82,7 +96,6 @@ public final class CommandTab implements Disposable {
 
         JPanel commandsPanel = new JPanel(new BorderLayout());
         ActionRun actionRun = new ActionRun(commandTable);// 运行
-
         ActionSchemaComboBox schemasAction = new ActionSchemaComboBox(schemasFromFile, this);// 分类下拉框
         ActionManageSchema actionManageSchema = new ActionManageSchema(jbTabs, schemaTab, schemasAction);// 分类管理按钮
         schemasAction.onItemChange();
@@ -99,7 +112,8 @@ public final class CommandTab implements Disposable {
                             return;
                         }
                         MyCmd myCmdAdd = new MyCmd(selectedItem.getId(), "", "");
-                        MyCmdDialog dialog = new MyCmdDialog(commandsPanel, myCmdAdd, -1, myCmdList);
+                        DialogMyCmd dialog = new DialogMyCmd(commandTable, myCmdAdd, -1, myCmdList);
+                        IdeaApiUtil.setRelatedLocation(dialog);
                         if (!dialog.showAndGet()) {
                             return;
                         }
@@ -143,7 +157,28 @@ public final class CommandTab implements Disposable {
                 return true;
             }
         }.installOn(commandTable);
+        //commandsPanel.setVisible(true);
         return new TabInfo(commandsPanel).setText(CommandTab.TAB_NAME);
+    }
+
+    private String beautyCmd(String cmd) {
+        // lsof -i:{%Parm%}
+        // 正则表达式来匹配 {%Parm%} 格式的占位符
+        logger.info("cmd美化前: " + cmd);
+        System.out.println("cmd美化前: " + cmd);
+        Pattern pattern = Pattern.compile("\\{%([a-zA-Z0-9_]+)%\\}");
+        Matcher matcher = pattern.matcher(cmd);
+        int i = 0;
+        while (matcher.find()) {
+            // 获取占位符中的参数名
+            String actual = "<i style='color:1C75CFFF;'>" + matcher.group(1) + "</i>";
+            cmd = cmd.replace(matcher.group(0), actual);
+        }
+        cmd = cmd.replace("\\", "<br>");
+        cmd = "<html>" + cmd + "</html>";
+        logger.info("cmd美化后: " + cmd);
+        System.out.println("cmd美化后: " + cmd);
+        return cmd;
     }
 
     private void editSelectedCommand() {
@@ -154,7 +189,8 @@ public final class CommandTab implements Disposable {
         }
         MyCmd sourceMyCmd = myCmdList.get(selectedIndex);
         MyCmd myCmdEdit = sourceMyCmd.clone();
-        MyCmdDialog dialog = new MyCmdDialog(commandTable, myCmdEdit, selectedIndex, myCmdList);
+        DialogMyCmd dialog = new DialogMyCmd(commandTable, myCmdEdit, selectedIndex, myCmdList);
+        IdeaApiUtil.setRelatedLocation(dialog);
         dialog.setTitle(MessagesUtil.getMessage("cmd.dialog.edit.title"));
         if (!dialog.showAndGet()) {
             return;

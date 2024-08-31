@@ -20,6 +20,7 @@ public class DialogParamInput extends DialogWrapper {
 
     public DialogParamInput(Map<String, String> map) {
         super(true); // use current window as parent
+        setSize(260, 120);
         this.map = map;
         init();
         setTitle("输入参数: ");

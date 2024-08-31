@@ -1,2 +1,2 @@
-rootProject.name = "command_assist"
+rootProject.name = "command assist"
 

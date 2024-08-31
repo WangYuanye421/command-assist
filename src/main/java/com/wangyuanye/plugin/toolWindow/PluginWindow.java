@@ -8,8 +8,9 @@ import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import com.intellij.ui.content.ContentManager;
+import com.intellij.ui.tabs.JBTabs;
+import com.intellij.ui.tabs.JBTabsFactory;
 import com.intellij.ui.tabs.TabInfo;
-import com.intellij.ui.tabs.impl.JBTabsImpl;
 import com.wangyuanye.plugin.component.CommandTab;
 import com.wangyuanye.plugin.component.SchemaTab;
 import org.jetbrains.annotations.NotNull;
@@ -26,7 +27,7 @@ import javax.swing.*;
 public final class PluginWindow implements Disposable {
     private static final Logger logger = Logger.getInstance(PluginWindow.class);
     private static Boolean CHEATSHEET_SHOW = false;
-    private JBTabsImpl jbTabs;
+    private JBTabs jbTabs;
     public Project currentProject;
     private CommandTab commandTab;
     private SchemaTab schemaTab;
@@ -40,9 +41,10 @@ public final class PluginWindow implements Disposable {
         return commandTab;
     }
 
+
     public void initToolWindow(@NotNull ToolWindow toolWindow, @NotNull Project project) {
         this.currentProject = project;
-        jbTabs = new JBTabsImpl(project);
+        jbTabs = JBTabsFactory.createTabs(project);
         TabInfo cmdTab = commandTab.buildCommandTab(jbTabs, schemaTab);
         //cmdTab.setTabColor(new JBColor(new Color(98, 163, 103), new Color(98, 163, 103)));
         jbTabs.addTab(cmdTab);
@@ -52,7 +54,7 @@ public final class PluginWindow implements Disposable {
 
         ContentFactory contentFactory = ContentFactory.getInstance();
         Content content = contentFactory.createContent(null, null, false);
-        content.setComponent(jbTabs);
+        content.setComponent(jbTabs.getComponent());
         ContentManager myContentManager = toolWindow.getContentManager();
         myContentManager.addContent(content);
     }
@@ -68,6 +70,7 @@ public final class PluginWindow implements Disposable {
 
     @Override
     public void dispose() {
-        System.out.println("应用关闭，执行清理");
+        commandTab = null;
+        schemaTab = null;
     }
 }

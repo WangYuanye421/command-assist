@@ -1,17 +1,15 @@
 package com.wangyuanye.plugin.toolWindow;
 
 
-import com.intellij.icons.AllIcons;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
+import com.wangyuanye.plugin.util.IdeaApiUtil;
+import com.wangyuanye.plugin.util.UiUtil;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import javax.swing.*;
 
 
 /**
@@ -23,6 +21,7 @@ import javax.swing.*;
  * todo 分享至github, star rank
  */
 public class MyToolWindowFactory implements ToolWindowFactory {
+    public static final String myToolWindowId = "CommandAssist";
     private static final Logger logger = Logger.getInstance(MyToolWindowFactory.class);
     private static PluginWindow pluginWindow;
 
@@ -36,16 +35,9 @@ public class MyToolWindowFactory implements ToolWindowFactory {
         logger.debug("debug current project : " + project.getName());
         //执行插件
         pluginWindow.initToolWindow(toolWindow, project);
-    }
-
-
-    /**
-     * 工具类显示的图标
-     *
-     * @return AllIcons.General.ExternalTools
-     */
-    @Override
-    public @Nullable Icon getIcon() {
-        return AllIcons.Toolwindows.ToolWindowCommander;
+        ToolWindow openTerminal = UiUtil.getOpenTerminal(IdeaApiUtil.getProject());
+        if (openTerminal != null) {
+            openTerminal.activate(null);
+        }
     }
 }

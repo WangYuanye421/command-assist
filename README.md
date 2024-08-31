@@ -1,23 +1,40 @@
-
 <!-- Plugin description -->
-## Why develop this plugin? What can it do?
- I am a Java developer. In my daily development work, I frequently need to start various services through the terminal. 
- Everyone has their own notes or cheat sheets, but switching windows, searching, and copying commands is too cumbersome. 
- So I developed this plugin, which can:
-- Define namespaces to manage different commands.
-- Copy commands to the terminal window with one click.
-- Support dynamic parameters in commands.
 
-I hope this plugin will help you boost your development efficiency.
+<div  align="center">
+    <h2>Command Assist</h2>
+    <i>A Tool for managing commands in IntelliJ IDEA</i>
+    <div></div>
+    <div style="padding-bottom: var(-100px);">
+    <img alt="Command Assist" height="300" src="src/main/resources/asset/Command_Assist.png" title="logo" width="300"/>
+    </div>
+    <div style="padding-top: var(-100px);">
+        <b>English</b> | <a href="README_zh_CN.md"><b>中文简体</b></a>
+    </div>
+</div>
 
-## 为什么开发这个插件?它能做什么?
- 我是一名Java开发人员.在日常开发中,需要通过终端频繁的启动各种服务,我知道大家都有自己的备忘录,但是切换窗口,寻找,复制...太麻烦了.
- 所以我开发了这款插件,它可以:
-- 定义命名空间,管理不同的命令
-- 一键复制到终端窗口
-- 命令支持动态参数
+---
+### Why develop this plugin? What can it do?
 
-希望这个插件能够帮助你提升开发效率.
+#### Problems
+- Can't remember frequently used commands?
+- Switching between applications? Searching notes? Copying and pasting?
+
+#### What can it do?
+- Namespace management for different commands
+- One-click copy to the terminal window
+- Commands support dynamic parameters
+
+#### How to use it
+1. Click "Add Category"
+2. Click "Add Command" (use `{%%}` to add dynamic parameters)
+3. Click "Copy to Terminal Window" when a command is selected
+
+<br>
+<br>
+I hope this plugin helps boost your development efficiency. If you like it, give it a star! 🫣
+
+---
+
 <!-- Plugin description end -->
 
 

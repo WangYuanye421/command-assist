@@ -27,7 +27,6 @@ import java.util.stream.Collectors;
 @State(name = "command", storages = {@Storage("command_assist/commands.xml")})
 public final class CmdDataSave implements PersistentStateComponent<CmdDataSave.MyState> {
     private CmdDataSave.MyState myState = new CmdDataSave.MyState();
-    private Boolean cmdDataLoaded = false;
 
     Notification notification = new Notification(
             "CommandAssistNotificationGroup", // 通知组ID
@@ -38,16 +37,27 @@ public final class CmdDataSave implements PersistentStateComponent<CmdDataSave.M
 
     // 保存所有的schema
     public static class MyState {
-        @Tag("commands")
-        @XCollection(elementName = "command")
-        public List<MyCmd> myCmds;
+        @Tag("cmds")
+        @XCollection(elementName = "cmd")
+        public List<MyCmd> cmds;
+
+        @Tag("flushFlag")
+        public Boolean flushFlag;
 
         public @NotNull List<MyCmd> getCmds() {
-            return myCmds == null ? new ArrayList<>() : myCmds;
+            return cmds == null ? new ArrayList<>() : cmds;
         }
 
-        public void setCmds(List<MyCmd> myCmds) {
-            this.myCmds = myCmds;
+        public void setCmds(List<MyCmd> cmds) {
+            this.cmds = cmds;
+        }
+
+        public Boolean getFlushFlag() {
+            return flushFlag;
+        }
+
+        public void setFlushFlag(Boolean flushFlag) {
+            this.flushFlag = flushFlag;
         }
     }
 
@@ -59,11 +69,7 @@ public final class CmdDataSave implements PersistentStateComponent<CmdDataSave.M
     @Override
     public void loadState(@NotNull MyState state) {
         myState = state;
-        cmdDataLoaded = true;
-    }
-
-    public Boolean getCmdDataLoaded() {
-        return cmdDataLoaded;
+        myState.setFlushFlag(false);
     }
 
     //列表

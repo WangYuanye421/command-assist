@@ -3,8 +3,8 @@ package com.wangyuanye.plugin.component;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.ui.tabs.JBTabs;
 import com.intellij.ui.tabs.TabInfo;
-import com.intellij.ui.tabs.impl.JBTabsImpl;
 import com.wangyuanye.plugin.util.IdeaApiUtil;
 import com.wangyuanye.plugin.util.MessagesUtil;
 import org.jetbrains.annotations.NotNull;
@@ -19,16 +19,16 @@ import java.util.Optional;
  * @date 2024/8/19
  **/
 public class ActionManageSchema extends AnAction {
-    private JBTabsImpl jbTabs;
+    private JBTabs jbTabs;
     private SchemaTab schemaTab;
     private ActionSchemaComboBox actionSchemaComboBox;
 
     public ActionManageSchema() {
-        super("管理分类", "操作分类数据", AllIcons.Modules.EditFolder);
+        super(MessagesUtil.getMessage("schema.manage_btn.text"), MessagesUtil.getMessage("schema.manage_btn.desc"), AllIcons.Modules.EditFolder);
     }
 
-    public ActionManageSchema(JBTabsImpl jbTabs, SchemaTab schemaTab, ActionSchemaComboBox combobox) {
-        super("管理分类", "操作分类数据", AllIcons.Modules.EditFolder);
+    public ActionManageSchema(JBTabs jbTabs, SchemaTab schemaTab, ActionSchemaComboBox combobox) {
+        super(MessagesUtil.getMessage("schema.manage_btn.text"), MessagesUtil.getMessage("schema.manage_btn.desc"), AllIcons.Modules.EditFolder);
         this.jbTabs = jbTabs;
         this.schemaTab = schemaTab;
         this.actionSchemaComboBox = combobox;

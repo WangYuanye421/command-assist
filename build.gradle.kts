@@ -1,7 +1,15 @@
 import org.jetbrains.changelog.Changelog
 import org.jetbrains.changelog.markdownToHTML
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
-
+/**
+ * 层级结构:
+ *  - plugins  Gradle 插件,扩展 Gradle 的功能,该文件中,每个插件类似一个命名空间
+ *  - project settings
+ *  - repositories  声明仓库
+ *  - dependencies  声明依赖
+ *  - tasks         定义/配置任务(任务是 Gradle 构建的基本组成单元)
+ *  - configurations
+ */
 plugins {
     id("java") // Java support
     alias(libs.plugins.kotlin) // Kotlin support
@@ -135,13 +143,8 @@ tasks {
     publishPlugin {
         dependsOn(patchChangelog)
     }
-}
 
-tasks.withType<Test> {
-    //useJUnitPlatform()
-    //enabled = false
 }
-
 
 
 intellijPlatformTesting {

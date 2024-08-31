@@ -4,7 +4,6 @@ package com.wangyuanye.plugin.dao.dto;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.util.xmlb.annotations.Attribute;
 import com.intellij.util.xmlb.annotations.Tag;
-import com.intellij.util.xmlb.annotations.Transient;
 
 import java.io.Serializable;
 import java.util.UUID;
@@ -24,8 +23,6 @@ public class MyCmd implements Serializable, Cloneable {
     private String name;
     @Attribute("remark")
     private String remark;
-    @Transient
-    private Boolean isEdit = false;
 
     public MyCmd() {
     }
@@ -82,14 +79,6 @@ public class MyCmd implements Serializable, Cloneable {
 
     public void setRemark(String remark) {
         this.remark = remark;
-    }
-
-    public Boolean getEdit() {
-        return isEdit;
-    }
-
-    public void setEdit(Boolean edit) {
-        isEdit = edit;
     }
 
     @Override

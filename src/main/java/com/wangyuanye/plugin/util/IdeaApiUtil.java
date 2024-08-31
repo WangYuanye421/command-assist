@@ -7,10 +7,17 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.colors.EditorColorsManager;
 import com.intellij.openapi.editor.colors.EditorColorsScheme;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.DialogWrapper;
+import com.intellij.openapi.wm.ToolWindow;
+import com.intellij.openapi.wm.ToolWindowManager;
 import com.wangyuanye.plugin.dao.CmdDataSave;
 import com.wangyuanye.plugin.dao.SchemaDataSave;
+import com.wangyuanye.plugin.toolWindow.MyToolWindowFactory;
 import com.wangyuanye.plugin.toolWindow.PluginWindow;
 import org.jetbrains.annotations.NotNull;
+
+import javax.swing.*;
+import java.awt.*;
 
 
 /**
@@ -31,6 +38,24 @@ public class IdeaApiUtil {
         return projectToolWindow.getCurrentProject();
     }
 
+    public static void setRelatedLocation(DialogWrapper dialog) {
+        ToolWindow toolWindow = ToolWindowManager.getInstance(IdeaApiUtil.getProject()).getToolWindow(MyToolWindowFactory.myToolWindowId);
+        if (toolWindow != null) {
+            JComponent component = toolWindow.getComponent();
+            Point toolWindowLocation = component.getLocationOnScreen();
+            Dimension toolWindowSize = component.getSize();
+
+            // 假设 dialog 是你的 DialogWrapper 对象
+            Dimension dialogSize = dialog.getPreferredSize();
+
+            int x = toolWindowLocation.x + (toolWindowSize.width - dialogSize.width) / 2;
+            int y = toolWindowLocation.y + (toolWindowSize.height - dialogSize.height) / 2;
+
+            dialog.setLocation(x, y);
+        }
+    }
+
+
     public static PluginWindow getToolWindow() {
         return ApplicationManager.getApplication().getService(PluginWindow.class);
     }
@@ -42,6 +67,7 @@ public class IdeaApiUtil {
     public static CmdDataSave getCmdService() {
         return ApplicationManager.getApplication().getService(CmdDataSave.class);
     }
+
 
     /**
      * 获取通知对象
