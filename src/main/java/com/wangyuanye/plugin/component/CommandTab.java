@@ -71,11 +71,8 @@ public final class CommandTab implements Disposable {
 
         // Column "name"
         TableColumn columnName = commandTable.getColumnModel().getColumn(0);
-        JTableHeader tableHeader = commandTable.getTableHeader();
-        FontMetrics headerFontMetrics = tableHeader.getFontMetrics(tableHeader.getFont());
-        int nameColumnWidth = headerFontMetrics.stringWidth(commandTable.getColumnName(0) + JBUIScale.scale(20));
-        columnName.setPreferredWidth(nameColumnWidth);
-        columnName.setMinWidth(nameColumnWidth);
+        columnName.setPreferredWidth(100);
+        columnName.setMinWidth(100);
         // 命令行美化
 //        columnName.setCellRenderer(new DefaultTableCellRenderer(){
 //            @Override
@@ -90,9 +87,8 @@ public final class CommandTab implements Disposable {
 
         // Column "remark"
         TableColumn remark = commandTable.getColumnModel().getColumn(1);
-        int remarkColumnWidth = headerFontMetrics.stringWidth(commandTable.getColumnName(1)) + JBUIScale.scale(20);
-        remark.setPreferredWidth(remarkColumnWidth);
-        remark.setMinWidth(remarkColumnWidth);
+        remark.setPreferredWidth(100);
+        remark.setMinWidth(100);
 
         JPanel commandsPanel = new JPanel(new BorderLayout());
         ActionRun actionRun = new ActionRun(commandTable);// 运行

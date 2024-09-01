@@ -62,17 +62,13 @@ public class SchemaTab implements Disposable {
         schemaModel.setSchemaList(schemaList);
         // Column "name"
         TableColumn columnName = schemaTable.getColumnModel().getColumn(0);
-        JTableHeader tableHeader = schemaTable.getTableHeader();
-        FontMetrics headerFontMetrics = tableHeader.getFontMetrics(tableHeader.getFont());
-        int nameColumnWidth = headerFontMetrics.stringWidth(schemaTable.getColumnName(0) + JBUIScale.scale(20));
-        columnName.setPreferredWidth(nameColumnWidth);
-        columnName.setMinWidth(nameColumnWidth);
+        columnName.setPreferredWidth(100);
+        columnName.setMinWidth(100);
 
         // Column "default"
         TableColumn isDefault = schemaTable.getColumnModel().getColumn(1);
-        int remarkColumnWidth = headerFontMetrics.stringWidth(schemaTable.getColumnName(1)) + JBUIScale.scale(20);
-        isDefault.setPreferredWidth(remarkColumnWidth);
-        isDefault.setMinWidth(remarkColumnWidth);
+        isDefault.setPreferredWidth(100);
+        isDefault.setMinWidth(100);
         ToolWindow toolWindow = ToolWindowManager.getInstance(IdeaApiUtil.getProject()).getToolWindow(MyToolWindowFactory.myToolWindowId);
         JComponent toolWindowComponent = toolWindow.getComponent();
 
