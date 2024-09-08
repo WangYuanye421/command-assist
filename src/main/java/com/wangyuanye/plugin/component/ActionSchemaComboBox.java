@@ -16,7 +16,7 @@ import java.util.List;
  * 下拉框
  *
  * @author wangyuanye
- * @date 2024/8/19
+ * 2024/8/19
  **/
 public class ActionSchemaComboBox extends AnAction implements CustomComponentAction {
     private static ComboBox<MySchema> comboBox;

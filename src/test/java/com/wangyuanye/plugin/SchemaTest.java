@@ -8,7 +8,7 @@ import com.wangyuanye.plugin.dao.dto.MySchema;
 
 /**
  * @author wangyuanye
- * @date 2024/8/27
+ *  2024/8/27
  **/
 public class SchemaTest extends BasePlatformTestCase {
     private SchemaDataSave schemaService;

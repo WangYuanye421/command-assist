@@ -21,7 +21,7 @@ import java.util.ResourceBundle;
  * 国际化工具类
  *
  * @author wangyuanye
- * @date 2024/8/15
+ * 2024/8/15
  **/
 public class MessagesUtil {
     public static Logger logger = new DefaultLogger("[MessagesUtil]");

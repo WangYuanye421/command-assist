@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
  * command持久层
  *
  * @author wangyuanye
- * @date 2024/8/23
+ * 2024/8/23
  **/
 @Service(Service.Level.APP)
 @State(name = "command", storages = {@Storage("command_assist/commands.xml")})

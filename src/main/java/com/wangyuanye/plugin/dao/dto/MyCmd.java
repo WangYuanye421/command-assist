@@ -10,7 +10,7 @@ import java.util.UUID;
 
 /**
  * @author wangyuanye
- * @date 2024/8/17
+ * 2024/8/17
  **/
 @Tag("cmd")
 public class MyCmd implements Serializable, Cloneable {

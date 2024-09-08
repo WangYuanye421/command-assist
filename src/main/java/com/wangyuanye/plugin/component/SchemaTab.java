@@ -30,7 +30,7 @@ import java.util.List;
 
 /**
  * @author wangyuanye
- * @date 2024/8/28
+ * 2024/8/28
  **/
 public class SchemaTab implements Disposable {
     private static final Logger logger = Logger.getInstance(SchemaTab.class);

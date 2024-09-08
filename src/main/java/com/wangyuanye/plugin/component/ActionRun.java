@@ -38,7 +38,7 @@ import java.util.regex.Pattern;
 
 /**
  * @author wangyuanye
- * @date 2024/8/20
+ * 2024/8/20
  **/
 public class ActionRun extends AnAction {
     private static final Logger logger = Logger.getInstance(ActionRun.class);

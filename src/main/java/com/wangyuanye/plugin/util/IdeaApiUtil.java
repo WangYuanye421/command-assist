@@ -24,7 +24,7 @@ import java.awt.*;
  * 插件开发常用api
  *
  * @author wangyuanye
- * @date 2024/8/20
+ * 2024/8/20
  **/
 public class IdeaApiUtil {
 

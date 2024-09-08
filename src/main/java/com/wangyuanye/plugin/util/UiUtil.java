@@ -15,7 +15,7 @@ import java.awt.*;
 
 /**
  * @author wangyuanye
- * @date 2024/8/20
+ * 2024/8/20
  **/
 public class UiUtil {
     private static ActionManager actionManager = ActionManager.getInstance();

@@ -9,7 +9,7 @@ import static com.intellij.ui.SimpleTextAttributes.STYLE_ITALIC;
 
 /**
  * @author wangyuanye
- * @date 2024/8/19
+ * 2024/8/19
  **/
 public class MyTableUtil {
 

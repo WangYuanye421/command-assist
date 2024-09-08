@@ -21,7 +21,7 @@ import java.util.List;
  * 命名空间持久层
  *
  * @author wangyuanye
- * @date 2024/8/23
+ * 2024/8/23
  **/
 @Service(Service.Level.APP)
 @State(name = "commandSchema", storages = {@Storage("command_assist/schemas.xml")})

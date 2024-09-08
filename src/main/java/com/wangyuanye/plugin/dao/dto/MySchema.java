@@ -14,7 +14,7 @@ import java.util.UUID;
  * nameSpace
  *
  * @author wangyuanye
- * @date 2024/8/18
+ * 2024/8/18
  **/
 @Tag("schema")
 public class MySchema implements Serializable, Cloneable {

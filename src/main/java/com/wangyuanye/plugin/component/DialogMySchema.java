@@ -17,7 +17,7 @@ import java.util.Optional;
 
 /**
  * @author wangyuanye
- * @date 2024/8/28
+ * 2024/8/28
  **/
 public class DialogMySchema extends DialogWrapper {
     private final MySchema mySchema;

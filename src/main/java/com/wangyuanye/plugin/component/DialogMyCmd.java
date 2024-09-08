@@ -17,7 +17,7 @@ import java.util.List;
 
 /**
  * @author wangyuanye
- * @date 2024/8/28
+ * 2024/8/28
  **/
 public class DialogMyCmd extends DialogWrapper {
     private final MyCmd myCmd;

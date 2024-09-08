@@ -16,7 +16,7 @@ import java.util.Optional;
  * 关闭分类tab
  *
  * @author wangyuanye
- * @date 2024/8/29
+ * 2024/8/29
  **/
 public class ActionCloseSchemaTab extends AnAction {
     private JBTabs jbTabs;

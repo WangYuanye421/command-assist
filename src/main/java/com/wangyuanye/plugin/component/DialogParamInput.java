@@ -12,7 +12,7 @@ import java.util.Map;
  * 参数输入框
  *
  * @author wangyuanye
- * @date 2024/8/23
+ * 2024/8/23
  **/
 public class DialogParamInput extends DialogWrapper {
     private final Map<String, JTextField> textFieldMap = new HashMap<>();

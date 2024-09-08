@@ -17,7 +17,7 @@ import java.util.Optional;
  * 管理分类
  *
  * @author wangyuanye
- * @date 2024/8/19
+ * 2024/8/19
  **/
 public class ActionManageSchema extends AnAction {
     private JBTabs jbTabs;

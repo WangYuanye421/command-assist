@@ -34,7 +34,7 @@ import java.util.List;
  * 插件窗口
  *
  * @author wangyuanye
- * @date 2024/8/20
+ * 2024/8/20
  **/
 public final class CommandTab implements Disposable {
     private static final Logger logger = Logger.getInstance(CommandTab.class);

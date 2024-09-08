@@ -24,7 +24,7 @@ import javax.swing.*;
  * 插件窗口
  *
  * @author wangyuanye
- * @date 2024/8/20
+ * 2024/8/20
  **/
 @Service
 public final class PluginWindow implements Disposable {
