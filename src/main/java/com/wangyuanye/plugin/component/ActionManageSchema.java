@@ -1,6 +1,7 @@
 package com.wangyuanye.plugin.component;
 
 import com.intellij.icons.AllIcons;
+import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.ui.tabs.JBTabs;
@@ -42,11 +43,13 @@ public class ActionManageSchema extends AnAction {
             IdeaApiUtil.myTips(MessagesUtil.getMessage("schema.tab.opened"));
             return;
         }
-        TabInfo tabInfo = schemaTab.buildSchemaTab(jbTabs, actionSchemaComboBox);
-        TabInfo tab = tabInfo;
+        TabInfo tab = schemaTab.buildSchemaTab(jbTabs, actionSchemaComboBox);
         jbTabs.addTab(tab);
         jbTabs.select(tab, true);// 激活当前tab
+    }
 
-
+    @Override
+    public @NotNull ActionUpdateThread getActionUpdateThread() {
+        return ActionUpdateThread.BGT; // fix `ActionUpdateThread.OLD_EDT` is deprecated
     }
 }

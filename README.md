@@ -1,12 +1,8 @@
 <div  align="center">
     <h2>Command Assist</h2>
     <i>A Tool for managing commands in IntelliJ IDEA</i>
-    <div></div>
     <div style="padding-bottom: var(-100px);">
     <img alt="Command Assist" height="300" src="src/main/resources/asset/Command_Assist.png" title="logo" width="300"/>
-    </div>
-    <div style="padding-top: var(-100px);">
-        <b>English</b> | <a href="./README_zh_CN.md"><b>中文简体</b></a>
     </div>
 </div>
 
@@ -42,7 +38,7 @@ I hope this plugin helps boost your development efficiency.🫣
 
 #### What can it do?
 - Namespace management for different commands
-- One-click copy to the terminal window
+- One-click run to the new terminal window
 - Commands support dynamic parameters
 
 #### How to use it
@@ -63,7 +59,7 @@ I hope this plugin helps boost your development efficiency.🫣
 
 #### 它能做什么
 - 命名空间管理不同命令
-- 一键复制到终端窗口
+- 一键运行到新的终端窗口
 - 命令支持动态参数
 
 #### 如何使用

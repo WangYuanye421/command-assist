@@ -1,9 +1,12 @@
 package com.wangyuanye.plugin.component;
 
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.actionSystem.ActionToolbarPosition;
+import com.intellij.openapi.actionSystem.Presentation;
+import com.intellij.openapi.actionSystem.impl.ActionButton;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.ui.*;
-import com.intellij.ui.scale.JBUIScale;
+import com.intellij.ui.DoubleClickListener;
+import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.table.JBTable;
 import com.intellij.ui.tabs.JBTabs;
 import com.intellij.ui.tabs.TabInfo;
@@ -17,14 +20,15 @@ import com.wangyuanye.plugin.util.MyTableUtil;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableColumn;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * 插件窗口
@@ -43,6 +47,19 @@ public final class CommandTab implements Disposable {
     private SchemaDataSave schemaService;
     private MySchema defaultSchema;
     private List<MySchema> schemasFromFile;
+    ActionButton actionAddBtn;
+    ActionButton actionEditBtn;
+    ActionButton actionDelBtn;
+    ActionButton actionCopyBtn;
+    ActionButton actionRunBtn;
+    ActionAddCmd actionAddCmd;//新增
+    ActionEditCmd actionEditCmd;// 修改
+    ActionRemoveCmd actionRemoveCmd;// 删除
+    ActionCopy actionCopy;// 复制
+    ActionRun actionRun;// 运行
+    List<ActionButton> buttonList;
+    ActionSchemaComboBox schemaComboBox;
+    ActionManageSchema actionManageSchema;
 
 
     public CommandTab() {
@@ -54,9 +71,19 @@ public final class CommandTab implements Disposable {
         myCmdList = cmdService.list(defaultSchema.getId());
         cmdModel = new MyCmdModel(myCmdList);
         commandTable = new JBTable(cmdModel);
+        tableConfig();
+    }
+
+    private void tableConfig() {
         commandTable.setShowGrid(false);
         commandTable.setFocusable(false);
-        commandTable.getTableHeader().setReorderingAllowed(false);// 禁止列拖动
+        commandTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION); // 设置单行选中
+        JTableHeader tableHeader = commandTable.getTableHeader();
+        DefaultTableCellRenderer headRenderer = new DefaultTableCellRenderer();
+        // 创建自定义渲染器，将内容居中
+        headRenderer.setHorizontalAlignment(SwingConstants.CENTER);
+        tableHeader.setDefaultRenderer(headRenderer);
+        tableHeader.setReorderingAllowed(false);// 禁止列拖动
         MyTableUtil.setEmptyText(commandTable);
     }
 
@@ -65,85 +92,127 @@ public final class CommandTab implements Disposable {
         commandTable.removeAll();
         cmdModel = new MyCmdModel(myCmdList);
         commandTable.setModel(cmdModel);
+        commandTable.getSelectionModel().clearSelection();
+
+        actionAddCmd.reset(commandTable, cmdModel, myCmdList);
+        actionEditCmd.reset(commandTable, cmdModel, myCmdList);
+        actionRemoveCmd.reset(commandTable, cmdModel, myCmdList);
+
+        // 按钮
+        for (ActionButton button : buttonList) {
+            button.setEnabled(false);
+        }
+        if (!schemasFromFile.isEmpty()) {
+            actionAddBtn.setEnabled(true);
+        }
     }
 
     public TabInfo buildCommandTab(JBTabs jbTabs, SchemaTab schemaTab) {
-
         // Column "name"
         TableColumn columnName = commandTable.getColumnModel().getColumn(0);
         columnName.setPreferredWidth(100);
         columnName.setMinWidth(100);
-        // 命令行美化
-//        columnName.setCellRenderer(new DefaultTableCellRenderer(){
-//            @Override
-//            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-//
-//                String cmd = (String) value;
-//                JLabel c = new JLabel();
-//                c.setText(beautyCmd(cmd));
-//                return c;
-//            }
-//        });
+        columnName.setMaxWidth(500);
+        columnName.setCellRenderer(new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value,
+                                                           boolean isSelected, boolean hasFocus, int row, int column) {
+                JLabel label = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                if (value != null) {
+                    String text = value.toString();
+                    // 限制文本长度，超过部分用省略号表示
+                    if (text.length() > 30) {
+                        label.setText(text.substring(0, 30) + "...");
+                    }
+                    // 悬浮显示完整文本
+                    label.setToolTipText(text);
+                }
+                return label;
+            }
+        });
 
         // Column "remark"
         TableColumn remark = commandTable.getColumnModel().getColumn(1);
         remark.setPreferredWidth(100);
         remark.setMinWidth(100);
+        remark.setMaxWidth(200);
 
         JPanel commandsPanel = new JPanel(new BorderLayout());
-        ActionRun actionRun = new ActionRun(commandTable);// 运行
-        ActionSchemaComboBox schemasAction = new ActionSchemaComboBox(schemasFromFile, this);// 分类下拉框
-        ActionManageSchema actionManageSchema = new ActionManageSchema(jbTabs, schemaTab, schemasAction);// 分类管理按钮
-        schemasAction.onItemChange();
-        commandsPanel.add(ToolbarDecorator.createDecorator(commandTable)
-                .addExtraAction(schemasAction)
+        this.schemaComboBox = new ActionSchemaComboBox(schemasFromFile, this);// 分类下拉框
+        this.actionManageSchema = new ActionManageSchema(jbTabs, schemaTab, schemaComboBox);// 分类管理按钮
+        schemaComboBox.onItemChange();
+
+        JPanel topTool = ToolbarDecorator.createDecorator(commandTable)
+                .addExtraAction(schemaComboBox)
                 .addExtraAction(actionManageSchema)
-                .setAddAction(new AnActionButtonRunnable() {
-                    @Override
-                    public void run(AnActionButton button) {
-                        stopEditing();
-                        MySchema selectedItem = (MySchema) schemasAction.getComboBox().getSelectedItem();
-                        if (selectedItem == null || selectedItem.getId() == null) {
-                            IdeaApiUtil.myTips(MessagesUtil.getMessage("cmd.add.no_schema"));
-                            return;
-                        }
-                        MyCmd myCmdAdd = new MyCmd(selectedItem.getId(), "", "");
-                        DialogMyCmd dialog = new DialogMyCmd(commandTable, myCmdAdd, -1, myCmdList);
-                        IdeaApiUtil.setRelatedLocation(dialog);
-                        if (!dialog.showAndGet()) {
-                            return;
-                        }
-                        logger.info("cmd add. cmd:" + myCmdAdd.toString());
-                        myCmdList.add(myCmdAdd);
-                        cmdService.addCmd(myCmdAdd);// db
-                        int index = myCmdList.size() - 1;
-                        cmdModel.fireTableRowsInserted(index, index);
-                        commandTable.getSelectionModel().setSelectionInterval(index, index);
-                        commandTable.scrollRectToVisible(commandTable.getCellRect(index, 0, true));
-                    }
-                })
-                .setEditAction(new AnActionButtonRunnable() {
-                    @Override
-                    public void run(AnActionButton button) {
-                        editSelectedCommand();
-                    }
-                })
-                .setRemoveAction(new AnActionButtonRunnable() {
-                    @Override
-                    public void run(AnActionButton button) {
-                        stopEditing();
-                        int selectedIndex = commandTable.getSelectedRow();
-                        if (selectedIndex < 0 || selectedIndex >= cmdModel.getRowCount()) {
-                            return;
-                        }
-                        MyCmd myCmdToBeRemoved = myCmdList.get(selectedIndex);
-                        logger.info("cmd remove. cmd:" + myCmdToBeRemoved.toString());
-                        cmdService.deleteCmd(myCmdToBeRemoved.getCmdId());
-                        TableUtil.removeSelectedItems(commandTable);
-                    }
-                })
-                .addExtraAction(actionRun)
-                .disableUpDownActions().createPanel(), BorderLayout.CENTER);
+                .disableUpDownActions()
+                .setToolbarPosition(ActionToolbarPosition.TOP)
+                .createPanel();
+
+        // 手动创建右侧竖直工具栏
+        this.actionAddCmd = new ActionAddCmd(commandTable, schemaComboBox, cmdModel, myCmdList, cmdService);//新增
+        this.actionEditCmd = new ActionEditCmd(commandTable, cmdModel, myCmdList, cmdService);// 修改
+        this.actionRemoveCmd = new ActionRemoveCmd(commandTable, cmdModel, myCmdList, cmdService);// 删除
+        this.actionCopy = new ActionCopy(commandTable);// 复制
+        this.actionRun = new ActionRun(commandTable);// 运行
+
+
+        JPanel rightTool = new JPanel();
+        rightTool.setLayout(new BoxLayout(rightTool, BoxLayout.Y_AXIS)); // 使用 BoxLayout 使按钮竖直排列
+        Dimension buttonSize = new Dimension(30, 30);
+        Presentation addPresentation = new Presentation();
+        addPresentation.copyFrom(actionAddCmd.getTemplatePresentation());
+        this.actionAddBtn = new ActionButton(actionAddCmd, addPresentation, "Toolbar", buttonSize);
+
+        Presentation editPresentation = new Presentation();
+        editPresentation.copyFrom(actionEditCmd.getTemplatePresentation());
+        this.actionEditBtn = new ActionButton(actionEditCmd, editPresentation, "Toolbar", buttonSize);
+
+        Presentation removePresentation = new Presentation();
+        removePresentation.copyFrom(actionRemoveCmd.getTemplatePresentation());
+        this.actionDelBtn = new ActionButton(actionRemoveCmd, removePresentation, "Toolbar", buttonSize);
+
+        Presentation copyPresentation = new Presentation();
+        copyPresentation.copyFrom(actionCopy.getTemplatePresentation());
+        this.actionCopyBtn = new ActionButton(actionCopy, copyPresentation, "Toolbar", buttonSize);
+
+        Presentation runPresentation = new Presentation();
+        runPresentation.copyFrom(actionRun.getTemplatePresentation());
+        this.actionRunBtn = new ActionButton(actionRun, runPresentation, "Toolbar", buttonSize);
+        this.buttonList = List.of(actionAddBtn, actionEditBtn, actionDelBtn, actionCopyBtn, actionRunBtn);
+        for (ActionButton button : buttonList) {
+            button.setPreferredSize(buttonSize);   // 设置首选大小
+            button.setMinimumSize(buttonSize);     // 设置最小大小
+            button.setMaximumSize(buttonSize);     // 设置最大大小
+            button.setEnabled(false);
+            rightTool.add(button);  // 添加按钮到竖直工具栏
+        }
+        // 首次加载, 新增按钮的控制
+        if (schemasFromFile.size() > 0) {
+            actionAddBtn.setEnabled(true);
+        }
+
+        // 监听选中行
+        commandTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                if (commandTable.getSelectedRow() != -1) {
+                    actionEditBtn.setEnabled(true);
+                    actionDelBtn.setEnabled(true);
+                    actionCopyBtn.setEnabled(true);
+                    actionRunBtn.setEnabled(true);
+                }
+                if (myCmdList.size() == 0) {
+                    actionEditBtn.setEnabled(false);
+                    actionDelBtn.setEnabled(false);
+                    actionCopyBtn.setEnabled(false);
+                    actionRunBtn.setEnabled(false);
+                }
+            }
+        });
+
+        commandsPanel.add(topTool, BorderLayout.CENTER); // 上方工具栏
+        commandsPanel.add(rightTool, BorderLayout.EAST); // 右侧竖型工具栏
 
         // double-click in "Patterns" table should also start editing of selected pattern
         new DoubleClickListener() {
@@ -157,28 +226,8 @@ public final class CommandTab implements Disposable {
         return new TabInfo(commandsPanel).setText(CommandTab.TAB_NAME);
     }
 
-    private String beautyCmd(String cmd) {
-        // lsof -i:{%Parm%}
-        // 正则表达式来匹配 {%Parm%} 格式的占位符
-        logger.info("cmd美化前: " + cmd);
-        System.out.println("cmd美化前: " + cmd);
-        Pattern pattern = Pattern.compile("\\{%([a-zA-Z0-9_]+)%\\}");
-        Matcher matcher = pattern.matcher(cmd);
-        int i = 0;
-        while (matcher.find()) {
-            // 获取占位符中的参数名
-            String actual = "<i style='color:1C75CFFF;'>" + matcher.group(1) + "</i>";
-            cmd = cmd.replace(matcher.group(0), actual);
-        }
-        cmd = cmd.replace("\\", "<br>");
-        cmd = "<html>" + cmd + "</html>";
-        logger.info("cmd美化后: " + cmd);
-        System.out.println("cmd美化后: " + cmd);
-        return cmd;
-    }
-
     private void editSelectedCommand() {
-        stopEditing();
+        stopEditing(commandTable);
         int selectedIndex = commandTable.getSelectedRow();
         if (selectedIndex < 0 || selectedIndex >= cmdModel.getRowCount()) {
             return;
@@ -198,7 +247,7 @@ public final class CommandTab implements Disposable {
         commandTable.getSelectionModel().setSelectionInterval(selectedIndex, selectedIndex);
     }
 
-    protected void stopEditing() {
+    public static void stopEditing(JBTable commandTable) {
         if (commandTable.isEditing()) {
             TableCellEditor editor = commandTable.getCellEditor();
             if (editor != null) {
@@ -215,6 +264,25 @@ public final class CommandTab implements Disposable {
 
     @Override
     public void dispose() {
-        System.out.println("应用关闭，执行清理");
+        this.cmdModel = null;
+        this.myCmdList = null;
+        this.commandTable = null;
+        this.cmdService = null;
+        this.schemaService = null;
+        this.defaultSchema = null;
+        this.schemasFromFile = null;
+        this.actionAddCmd = null;
+        this.actionEditCmd = null;
+        this.actionRemoveCmd = null;
+        this.actionCopy = null;
+        this.actionRun = null;
+        this.actionAddBtn = null;
+        this.actionEditBtn = null;
+        this.actionDelBtn = null;
+        this.actionCopyBtn = null;
+        this.actionRunBtn = null;
+        this.buttonList = null;
+        this.schemaComboBox = null;
+        this.actionManageSchema = null;
     }
 }

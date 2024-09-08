@@ -3,8 +3,8 @@ package com.wangyuanye.plugin.component;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.ValidationInfo;
-import com.intellij.ui.components.JBTextArea;
 import com.intellij.ui.components.JBTextField;
+import com.intellij.ui.components.fields.ExpandableTextField;
 import com.intellij.util.ui.FormBuilder;
 import com.wangyuanye.plugin.dao.dto.MyCmd;
 import com.wangyuanye.plugin.util.MessagesUtil;
@@ -21,7 +21,7 @@ import java.util.List;
  **/
 public class DialogMyCmd extends DialogWrapper {
     private final MyCmd myCmd;
-    private final JBTextField cmdField;
+    private final ExpandableTextField cmdField;
     private final JBTextField remarkField;
     private final int myCmdIndex;
     private final List<MyCmd> myExistingMyCmdList;
@@ -37,7 +37,8 @@ public class DialogMyCmd extends DialogWrapper {
         setTitle(MessagesUtil.getMessage("cmd.dialog.add.title"));
         setResizable(false);
         this.myCmd = myCmd;
-        cmdField = new JBTextField(this.myCmd.getName());
+        cmdField = new ExpandableTextField();
+        cmdField.setText(myCmd.getName());
 
         remarkField = new JBTextField(this.myCmd.getRemark());
         helpIcon = new JLabel(AllIcons.General.ContextHelp);

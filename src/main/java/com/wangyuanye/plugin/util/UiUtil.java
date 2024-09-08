@@ -67,4 +67,11 @@ public class UiUtil {
         Dimension buttonSize = JBUI.size(20); // 设置按钮的大小
         return new ActionButton(action, presentation, MessagesUtil.getMessage(i18nStr), buttonSize);
     }
+
+    public static ActionButton getActionButton(AnAction action, String i18nStr) {
+        // 创建ActionButton
+        Presentation presentation = action.getTemplatePresentation().clone();
+        Dimension buttonSize = JBUI.size(20); // 设置按钮的大小
+        return new ActionButton(action, presentation, MessagesUtil.getMessage(i18nStr), buttonSize);
+    }
 }

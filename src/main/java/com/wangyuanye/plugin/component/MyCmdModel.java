@@ -14,7 +14,8 @@ import java.util.List;
 public class MyCmdModel extends AbstractTableModel implements ItemRemovable {
     private final String[] ourColumnNames = new String[]{
             MessagesUtil.getMessage("cmd.table.col_name"),
-            MessagesUtil.getMessage("cmd.table.col_remark")
+            MessagesUtil.getMessage("cmd.table.col_remark"),
+            //MessagesUtil.getMessage("cmd.table.col_run"),
     };
     private final Class[] ourColumnClasses = new Class[]{String.class, String.class};
 
@@ -55,6 +56,7 @@ public class MyCmdModel extends AbstractTableModel implements ItemRemovable {
         return switch (column) {
             case 0 -> myCmd.getName();
             case 1 -> myCmd.getRemark();
+            //case 2 ->  "";
             default -> throw new IllegalArgumentException();
         };
     }
@@ -65,6 +67,8 @@ public class MyCmdModel extends AbstractTableModel implements ItemRemovable {
         switch (column) {
             case 0 -> myCmd.setName((String) value);
             case 1 -> myCmd.setRemark((String) value);
+//            case 2 -> {
+//            }
             default -> throw new IllegalArgumentException();
         }
     }

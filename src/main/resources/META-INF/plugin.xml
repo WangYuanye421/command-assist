@@ -32,6 +32,15 @@
 
 		<action id="tab_schema_close" class="com.wangyuanye.plugin.component.ActionCloseSchemaTab" text="Close Tab"/>
 
+		<action id="ActionCopy" class="com.wangyuanye.plugin.component.ActionCopy" text="ActionCopy"
+				description="ActionCopy"/>
+
+		<action id="ActionAddCmd" class="com.wangyuanye.plugin.component.ActionAddCmd" text="ActionAddCmd"
+				description="ActionAddCmd"/>
+		<action id="ActionEditCmd" class="com.wangyuanye.plugin.component.ActionEditCmd" text="ActionEditCmd"
+				description="ActionEditCmd"/>
+		<action id="ActionRemoveCmd" class="com.wangyuanye.plugin.component.ActionRemoveCmd" text="ActionRemoveCmd"
+				description="ActionRemoveCmd"/>
 	</actions>
 
 	<extensions defaultExtensionNs="com.intellij">
@@ -42,7 +51,7 @@
 		<!--                             id = "com.wangyuanye.plugin" />-->
 		<!--插件入口程序-->
 		<toolWindow factoryClass="com.wangyuanye.plugin.toolWindow.MyToolWindowFactory"
-					id="CommandAssist" icon="AllIcons.Toolwindows.ToolWindowCommander"
+					id="Command Assist" icon="AllIcons.Toolwindows.ToolWindowCommander"
 		/>
 
 		<!--通知-->

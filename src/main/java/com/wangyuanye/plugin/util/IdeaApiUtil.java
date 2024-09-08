@@ -68,18 +68,32 @@ public class IdeaApiUtil {
         return ApplicationManager.getApplication().getService(CmdDataSave.class);
     }
 
+    private static Notification tipNotification;
+    private static Notification warnNotification;
 
     /**
      * 获取通知对象
      *
      * @return Notification
      */
-    public static Notification getNotification() {
-        return new Notification(
-                "CommandAssistNotificationGroup", // 通知组ID
-                "Command Assist 通知",        // 通知标题
-                NotificationType.INFORMATION // 通知类型 (INFORMATION, WARNING, ERROR)
-        );
+    public static Notification getTipNotification() {
+        if (tipNotification == null) {
+            tipNotification = new Notification(
+                    "CommandAssistNotificationGroup", // 通知组ID
+                    "Command Assist 通知",        // 通知标题
+                    NotificationType.INFORMATION); // 通知类型 (INFORMATION, WARNING, ERROR)
+        }
+        return tipNotification;
+    }
+
+    public static Notification getWarnNotification() {
+        if (warnNotification == null) {
+            warnNotification = new Notification(
+                    "CommandAssistNotificationGroup", // 通知组ID
+                    "Command Assist 通知",        // 通知标题
+                    NotificationType.WARNING); // 通知类型 (INFORMATION, WARNING, ERROR)
+        }
+        return warnNotification;
     }
 
     /**
@@ -88,7 +102,13 @@ public class IdeaApiUtil {
      * @param tip 提示信息
      */
     public static void myTips(String tip) {
-        Notification notification = getNotification();
+        Notification notification = getTipNotification();
+        notification.setContent(MessagesUtil.buildBalloon(tip));
+        notification.notify(getProject());
+    }
+
+    public static void myWarn(String tip) {
+        Notification notification = getWarnNotification();
         notification.setContent(MessagesUtil.buildBalloon(tip));
         notification.notify(getProject());
     }

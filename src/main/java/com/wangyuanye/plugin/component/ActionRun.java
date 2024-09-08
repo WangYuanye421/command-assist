@@ -20,16 +20,19 @@ import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
+import com.intellij.ui.content.ContentManagerEvent;
+import com.intellij.ui.content.ContentManagerListener;
 import com.intellij.ui.table.JBTable;
 import com.wangyuanye.plugin.util.IdeaApiUtil;
 import com.wangyuanye.plugin.util.MessagesUtil;
 import com.wangyuanye.plugin.util.UiUtil;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -42,27 +45,19 @@ public class ActionRun extends AnAction {
     private JBTable commandTable;
 
     public ActionRun() {
-        super(MessagesUtil.getMessage("cmd.run_btn.text"), MessagesUtil.getMessage("cmd.run_btn.desc"), AllIcons.Actions.Execute);
+        super(MessagesUtil.getMessage("cmd.toolbar.run.text"), MessagesUtil.getMessage("cmd.toolbar.run.text"), AllIcons.Actions.Execute);
     }
 
     public ActionRun(JBTable commandTable) {
-        super(MessagesUtil.getMessage("cmd.run_btn.text"), MessagesUtil.getMessage("cmd.run_btn.desc"), AllIcons.Actions.Execute);
+        super(MessagesUtil.getMessage("cmd.toolbar.run.text"), MessagesUtil.getMessage("cmd.toolbar.run.text"), AllIcons.Actions.Execute);
         this.commandTable = commandTable;
     }
 
     @Override
     public @NotNull ActionUpdateThread getActionUpdateThread() {
-        return super.getActionUpdateThread();
+        return ActionUpdateThread.EDT; // fix `ActionUpdateThread.OLD_EDT` is deprecated
     }
 
-    @Override
-    public void update(@NotNull AnActionEvent e) {
-        if (commandTable == null) {
-            e.getPresentation().setEnabled(false);
-        } else {
-            e.getPresentation().setEnabled(commandTable.getSelectedRow() != -1);
-        }
-    }
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
@@ -75,8 +70,15 @@ public class ActionRun extends AnAction {
     private void run(Project project) {
         String cmd = getSelectCmd();
         if (cmd == null || cmd.isEmpty()) return;
-        cmd = processCmd(cmd);
-        doRun(project, cmd);
+        logger.info("原始 cmd : " + cmd);
+        AtomicBoolean sudoFlag = new AtomicBoolean(false);
+        Map<String, String> cmdMap = processCmd(cmd, sudoFlag);
+        logger.info("处理后 cmd : " + cmd);
+        String cancel = cmdMap.get("cancel");
+        if (cancel != null) {
+            return;
+        }
+        doRun2(project, cmdMap, sudoFlag);
     }
 
     private void doRun(Project project, String cmd) {
@@ -85,10 +87,10 @@ public class ActionRun extends AnAction {
         runInTerminal(project, cmd, openTerminal);
     }
 
-    private String processCmd(String cmd) {
+    private Map<String, String> processCmd(String cmd, AtomicBoolean sudoFlag) {
+        Map<String, String> resultMap = new HashMap<>();
         String result = cmd;
         // lsof -i:{%Parm%}
-        logger.info("原始命令 : " + result);
         // 正则表达式来匹配 {%Parm%} 格式的占位符
         Pattern pattern = Pattern.compile("\\{%([a-zA-Z0-9_]+)%\\}");
         Matcher matcher = pattern.matcher(result);
@@ -100,6 +102,12 @@ public class ActionRun extends AnAction {
             map.put(parameterName, "");
             cmdKV.put(parameterName, matcher.group(0));
         }
+        // 是否包含sudo
+        sudoFlag.set(false);
+        if (cmd.contains("sudo")) {
+            map.put("sudo", "");
+            sudoFlag.set(true);
+        }
         if (!map.isEmpty()) {
             DialogParamInput inputDialog = new DialogParamInput(map);
             IdeaApiUtil.setRelatedLocation(inputDialog);
@@ -107,16 +115,29 @@ public class ActionRun extends AnAction {
                 // 如果用户点击“OK”按钮，获取输入的值
                 map = inputDialog.getMap();
             } else {
-                return cmd;
+                resultMap.put("cancel", "cancel");// 取消执行
+                return resultMap;
             }
             for (String k : map.keySet()) {
-                String value = map.get(k);
-                String key = cmdKV.get(k);
-                result = result.replace(key, value);
+                if (!"sudo".equals(k)) {
+                    String value = map.get(k);
+                    String key = cmdKV.get(k);
+                    result = result.replace(key, value);
+                }
+            }
+            String temp = result;
+            resultMap.put("no_pwd", temp.replace("\\n", " ").replace("\\", " "));
+            // 处理sudo
+            if (sudoFlag.get()) {
+
+                String sudoAccess = "echo " + map.get("sudo") + "|" + " sudo -S -v 2>/dev/null && ";//缓存sudo权限
+                result = result.replaceAll("sudo", sudoAccess);
             }
         }
-        logger.info("待执行命令 : " + result);
-        return result;
+        // 移除 \ 和 \n
+        result = result.replace("\\n", " ").replace("\\", " ");
+        resultMap.put("result", result);
+        return resultMap;
     }
 
     private void runInTerminal(@NotNull Project project, String cmd, ToolWindow openTerminal) {
@@ -133,7 +154,8 @@ public class ActionRun extends AnAction {
     }
 
     // 使用consoleView
-    private void doRun2(Project project, String cmd) {
+    private void doRun2(Project project, Map<String, String> cmdMap, AtomicBoolean sudoFlag) {
+        String cmd = cmdMap.get("result");
         String basePath = project.getBasePath();
         if (basePath == null) {
             logger.error("Project basePath is null");
@@ -147,12 +169,12 @@ public class ActionRun extends AnAction {
         } else if (os.toLowerCase().contains("windows")) {
             shellPath = "cmd.exe";
         }
-
-        GeneralCommandLine commandLine = new GeneralCommandLine(shellPath, "-c", "cd " + basePath + " && " + cmd);
+        GeneralCommandLine commandLine = new GeneralCommandLine(shellPath);
         // 默认当前项目
-        commandLine.setWorkDirectory(new File(basePath));
-
-        commandLine.withCharset(StandardCharsets.UTF_8);
+        commandLine.setWorkDirectory(basePath);
+        commandLine.setCharset(StandardCharsets.UTF_8);
+        commandLine.addParameter("-c");
+        commandLine.addParameter(cmd);
         OSProcessHandler processHandler = null;
         try {
             processHandler = new OSProcessHandler(commandLine);
@@ -160,26 +182,84 @@ public class ActionRun extends AnAction {
             logger.error(e.toString());
             throw new RuntimeException(e);
         }
+        // 获取进程ID
+        final Process process = processHandler.getProcess();
+        long pid = process.pid();
         ConsoleView consoleView = TextConsoleBuilderFactory.getInstance().createBuilder(project).getConsole();
+        consoleView.print("Command Assist: \n", ConsoleViewContentType.SYSTEM_OUTPUT);
+        consoleView.print("     dir: " + commandLine.getWorkDirectory() + "\n", ConsoleViewContentType.SYSTEM_OUTPUT);
+        consoleView.print("     pid: " + pid + "\n", ConsoleViewContentType.SYSTEM_OUTPUT);
+        if (sudoFlag.get()) {
+            String noPwd = cmdMap.get("no_pwd");
+            consoleView.print("     cmd: " + noPwd + "\n", ConsoleViewContentType.SYSTEM_OUTPUT);
+        } else {
+            consoleView.print("     cmd: " + cmd + "\n", ConsoleViewContentType.SYSTEM_OUTPUT);
+        }
+        consoleView.print("--------------------------------------------------------------",
+                ConsoleViewContentType.SYSTEM_OUTPUT);
+        consoleView.print(" \n", ConsoleViewContentType.SYSTEM_OUTPUT);
         processHandler.addProcessListener(new ProcessAdapter() {
             @Override
             public void onTextAvailable(@NotNull ProcessEvent event, @NotNull Key outputType) {
-                consoleView.print(event.getText(), ConsoleViewContentType.NORMAL_OUTPUT);
+                String text = event.getText();
+                if (!text.startsWith(commandLine.getExePath())) {
+                    consoleView.print(text, ConsoleViewContentType.SYSTEM_OUTPUT);
+                }
             }
         });
 
-        ToolWindow terminal = ToolWindowManager.getInstance(project).getToolWindow("Terminal");
+        ToolWindowManager toolWindowManager = ToolWindowManager.getInstance(project);
+        ToolWindow terminal = toolWindowManager.getToolWindow("Terminal");
         ContentFactory contentFactory = ContentFactory.getInstance();
         Content content = contentFactory.createContent(consoleView.getComponent(), buildTabName(cmd), false);
-        content.setTabColor(new JBColor(0x96F61D1D, 0x96F61D1D));
+        content.setTabColor(new JBColor(0x769AE5DC, 0x769AE5DC));
+        final Long myGroupId = 9999L;
+        content.setExecutionId(myGroupId);
         if (terminal != null) {
             terminal.getContentManager().addContent(content);
+            // 确保新创建的标签页可见并选中
+            terminal.getContentManager().setSelectedContent(content);
             terminal.activate(null);
+
+            terminal.addContentManagerListener(new ContentManagerListener() {
+                @Override
+                public void contentRemoved(@NotNull ContentManagerEvent event) {
+                    //  区分terminal是否是自己创建的
+                    if (!myGroupId.equals(event.getContent().getExecutionId())) {
+                        return;
+                    }
+                    if (process.isAlive()) {
+                        process.destroyForcibly();
+                        try {
+                            boolean terminated = process.waitFor(5, TimeUnit.SECONDS);
+                            if (terminated) {
+                                IdeaApiUtil.myTips(MessagesUtil.getMessage("terminal.close.success"));
+                            } else {
+                                String html = "<html><br>"
+                                        + buildTabName(cmd)
+                                        + "<br>"
+                                        + MessagesUtil.getMessage("terminal.close.fail")
+                                        + "<br>"
+                                        + "pid : " + pid
+                                        + "</html>";
+                                IdeaApiUtil.myWarn(html);
+                            }
+                        } catch (InterruptedException e) {
+                            logger.error("终端页关闭异常. " + e.toString());
+                            throw new RuntimeException(e);
+                        }
+                    } else {
+                        IdeaApiUtil.myTips(MessagesUtil.getMessage("terminal.close.success"));
+                    }
+                }
+            });
+
         } else {
             logger.error("terminal 为null");
         }
         processHandler.startNotify();
     }
+
 
     private String buildTabName(String cmd) {
         if (cmd.length() <= 10) {

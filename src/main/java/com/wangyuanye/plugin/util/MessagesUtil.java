@@ -13,6 +13,7 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
 import java.awt.event.KeyEvent;
+import java.security.SecureRandom;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
@@ -128,5 +129,17 @@ public class MessagesUtil {
         Locale.setDefault(Locale.US);
         System.out.println("当前地区:" + Locale.getDefault());
         System.out.println(getMessage("sayHi"));
+    }
+
+    private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    private static final SecureRandom RANDOM = new SecureRandom();
+
+    public static String generateRandomString(int length) {
+        StringBuilder result = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
+            int index = RANDOM.nextInt(CHARACTERS.length());
+            result.append(CHARACTERS.charAt(index));
+        }
+        return result.toString();
     }
 }

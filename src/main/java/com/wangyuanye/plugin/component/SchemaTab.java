@@ -1,11 +1,13 @@
 package com.wangyuanye.plugin.component;
 
+import com.intellij.ide.ui.LafManager;
+import com.intellij.ide.ui.LafManagerListener;
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.ui.*;
-import com.intellij.ui.scale.JBUIScale;
 import com.intellij.ui.table.JBTable;
 import com.intellij.ui.tabs.JBTabs;
 import com.intellij.ui.tabs.TabInfo;
@@ -19,7 +21,6 @@ import com.wangyuanye.plugin.util.MyTableUtil;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
-import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableColumn;
 import java.awt.*;
@@ -50,14 +51,14 @@ public class SchemaTab implements Disposable {
         schemaTable = new JBTable(schemaModel);
         schemaTable.setShowGrid(false);
         schemaTable.setFocusable(false);
-        schemaTable.setFocusable(false);
         schemaTable.getTableHeader().setReorderingAllowed(false);// 禁止列拖动
         MyTableUtil.setEmptyText(schemaTable);
-
     }
 
 
     public TabInfo buildSchemaTab(JBTabs jbTabs, ActionSchemaComboBox combobox) {
+        JPanel schemasPanel = new JPanel(new BorderLayout());
+        TabInfo tabInfo = new TabInfo(schemasPanel);
         schemaList = new ArrayList<>(schemaService.list());
         schemaModel.setSchemaList(schemaList);
         // Column "name"
@@ -72,8 +73,7 @@ public class SchemaTab implements Disposable {
         ToolWindow toolWindow = ToolWindowManager.getInstance(IdeaApiUtil.getProject()).getToolWindow(MyToolWindowFactory.myToolWindowId);
         JComponent toolWindowComponent = toolWindow.getComponent();
 
-        JPanel schemasPanel = new JPanel(new BorderLayout());
-        schemasPanel.add(ToolbarDecorator.createDecorator(schemaTable)
+        JPanel panel = ToolbarDecorator.createDecorator(schemaTable)
                 .setAddAction(new AnActionButtonRunnable() {
                     @Override
                     public void run(AnActionButton button) {
@@ -116,7 +116,15 @@ public class SchemaTab implements Disposable {
                         combobox.initComboBoxData(schemaList, true);// 下拉框移除
                     }
                 }).addExtraAction(new ActionCloseSchemaTab(jbTabs))
-                .disableUpDownActions().createPanel(), BorderLayout.CENTER);
+                .disableUpDownActions().createPanel();
+        ApplicationManager.getApplication().getMessageBus().connect().subscribe(LafManagerListener.TOPIC, new LafManagerListener() {
+            @Override
+            public void lookAndFeelChanged(LafManager source) {
+                // 当主题发生变化时调用此方法
+                SwingUtilities.updateComponentTreeUI(panel);
+            }
+        });
+        schemasPanel.add(panel, BorderLayout.CENTER);
 
         // double-click
         new DoubleClickListener() {
@@ -126,7 +134,8 @@ public class SchemaTab implements Disposable {
                 return true;
             }
         }.installOn(schemaTable);
-        return new TabInfo(schemasPanel).setText(SchemaTab.TAB_NAME);
+        SwingUtilities.updateComponentTreeUI(panel);// UI主题变化,更新组件及子组件的UI
+        return tabInfo.setText(SchemaTab.TAB_NAME);
     }
 
 
@@ -169,6 +178,10 @@ public class SchemaTab implements Disposable {
 
     @Override
     public void dispose() {
-        System.out.println("应用关闭，执行清理");
+        schemaModel = null;
+        schemaList = null;
+        schemaTable = null;
+        cmdService = null;
+        schemaService = null;
     }
 }

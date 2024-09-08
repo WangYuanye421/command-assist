@@ -1,6 +1,9 @@
 package com.wangyuanye.plugin.toolWindow;
 
+import com.intellij.ide.ui.LafManager;
+import com.intellij.ide.ui.LafManagerListener;
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
@@ -45,6 +48,17 @@ public final class PluginWindow implements Disposable {
     public void initToolWindow(@NotNull ToolWindow toolWindow, @NotNull Project project) {
         this.currentProject = project;
         jbTabs = JBTabsFactory.createTabs(project);
+        // 监听UI主题变化
+        ApplicationManager.getApplication().getMessageBus().connect().subscribe(LafManagerListener.TOPIC, new LafManagerListener() {
+            @Override
+            public void lookAndFeelChanged(LafManager source) {
+                // 当主题发生变化时调用此方法
+                for (TabInfo tab : jbTabs.getTabs()) {
+                    tab.getComponent().repaint();
+                }
+            }
+        });
+
         TabInfo cmdTab = commandTab.buildCommandTab(jbTabs, schemaTab);
         //cmdTab.setTabColor(new JBColor(new Color(98, 163, 103), new Color(98, 163, 103)));
         jbTabs.addTab(cmdTab);

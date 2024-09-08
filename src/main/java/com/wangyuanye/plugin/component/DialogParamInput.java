@@ -30,11 +30,19 @@ public class DialogParamInput extends DialogWrapper {
     protected @Nullable JComponent createCenterPanel() {
         JPanel panel = new JPanel(new GridLayout(map.size(), 2));
         for (String k : map.keySet()) {
-            JLabel label = new JLabel(k + ":");
-            JTextField textField = new JTextField();
-            textFieldMap.put(k, textField); // 存储 JTextField 的引用
-            panel.add(label);
-            panel.add(textField);
+            if ("sudo".equals(k)) {
+                JLabel label = new JLabel(k + " pwd :");
+                JPasswordField passwordField = new JPasswordField();
+                textFieldMap.put(k, passwordField); // 存储 JTextField 的引用
+                panel.add(label);
+                panel.add(passwordField);
+            } else {
+                JLabel label = new JLabel(k + ":");
+                JTextField textField = new JTextField();
+                textFieldMap.put(k, textField); // 存储 JTextField 的引用
+                panel.add(label);
+                panel.add(textField);
+            }
         }
         return panel;
     }

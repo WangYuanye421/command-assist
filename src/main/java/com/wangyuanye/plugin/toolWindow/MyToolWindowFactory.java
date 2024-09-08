@@ -21,7 +21,7 @@ import org.jetbrains.annotations.NotNull;
  * todo 分享至github, star rank
  */
 public class MyToolWindowFactory implements ToolWindowFactory {
-    public static final String myToolWindowId = "CommandAssist";
+    public static final String myToolWindowId = "Command Assist";
     private static final Logger logger = Logger.getInstance(MyToolWindowFactory.class);
     private static PluginWindow pluginWindow;
 
