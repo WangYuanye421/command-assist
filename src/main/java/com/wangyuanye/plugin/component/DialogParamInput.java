@@ -1,6 +1,7 @@
 package com.wangyuanye.plugin.component;
 
 import com.intellij.openapi.ui.DialogWrapper;
+import com.intellij.util.ui.JBUI;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
@@ -20,29 +21,40 @@ public class DialogParamInput extends DialogWrapper {
 
     public DialogParamInput(Map<String, String> map) {
         super(true); // use current window as parent
-        setSize(260, 120);
         this.map = map;
+        setResizable(false);
         init();
         setTitle("输入参数: ");
     }
 
     @Override
     protected @Nullable JComponent createCenterPanel() {
-        JPanel panel = new JPanel(new GridLayout(map.size(), 2));
+        JPanel panel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = JBUI.insets(5, 0); // 设置组件之间的上下左右间距
+        int row = 0; // 记录当前的行数
+
         for (String k : map.keySet()) {
+            // 设置 label 占据第一列
+            gbc.gridx = 0;
+            gbc.gridy = row;
+            gbc.weightx = 0.2; // label 占较小的空间
+            JLabel label = new JLabel(k + (k.equals("sudo") ? " pwd:" : ":"));
+            panel.add(label, gbc);
+            // 设置 textField 占据第二列
+            gbc.gridx = 1;
+            gbc.weightx = 0.8; // textField 占较多的空间
             if ("sudo".equals(k)) {
-                JLabel label = new JLabel(k + " pwd :");
                 JPasswordField passwordField = new JPasswordField();
-                textFieldMap.put(k, passwordField); // 存储 JTextField 的引用
-                panel.add(label);
-                panel.add(passwordField);
+                textFieldMap.put(k, passwordField);
+                panel.add(passwordField, gbc);
             } else {
-                JLabel label = new JLabel(k + ":");
                 JTextField textField = new JTextField();
-                textFieldMap.put(k, textField); // 存储 JTextField 的引用
-                panel.add(label);
-                panel.add(textField);
+                textFieldMap.put(k, textField);
+                panel.add(textField, gbc);
             }
+            row++; // 每添加一行，行数增加
         }
         return panel;
     }

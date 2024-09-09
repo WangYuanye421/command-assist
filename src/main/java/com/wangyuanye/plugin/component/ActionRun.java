@@ -92,7 +92,7 @@ public class ActionRun extends AnAction {
         String result = cmd;
         // lsof -i:{%Parm%}
         // 正则表达式来匹配 {%Parm%} 格式的占位符
-        Pattern pattern = Pattern.compile("\\{%([a-zA-Z0-9_]+)%\\}");
+        Pattern pattern = Pattern.compile("\\{%([a-zA-Z0-9_]+)%}");
         Matcher matcher = pattern.matcher(result);
         Map<String, String> map = new HashMap<>();
         Map<String, String> cmdKV = new HashMap<>();
@@ -175,7 +175,7 @@ public class ActionRun extends AnAction {
         commandLine.setCharset(StandardCharsets.UTF_8);
         commandLine.addParameter("-c");
         commandLine.addParameter(cmd);
-        OSProcessHandler processHandler = null;
+        OSProcessHandler processHandler;
         try {
             processHandler = new OSProcessHandler(commandLine);
         } catch (ExecutionException e) {
@@ -199,12 +199,22 @@ public class ActionRun extends AnAction {
                 ConsoleViewContentType.SYSTEM_OUTPUT);
         consoleView.print(" \n", ConsoleViewContentType.SYSTEM_OUTPUT);
         processHandler.addProcessListener(new ProcessAdapter() {
+            // 监听输出
             @Override
             public void onTextAvailable(@NotNull ProcessEvent event, @NotNull Key outputType) {
                 String text = event.getText();
                 if (!text.startsWith(commandLine.getExePath())) {
                     consoleView.print(text, ConsoleViewContentType.SYSTEM_OUTPUT);
                 }
+            }
+
+            // 监听终止事件
+            @Override
+            public void processTerminated(@NotNull ProcessEvent event) {
+                // 当进程终止时，输出任务完成提示
+                consoleView.print("\n\n\n", ConsoleViewContentType.SYSTEM_OUTPUT);
+                consoleView.print("Command Assist: " + MessagesUtil.getMessage("terminal.run.complete") + "\n",
+                        ConsoleViewContentType.SYSTEM_OUTPUT);
             }
         });
 
@@ -213,7 +223,7 @@ public class ActionRun extends AnAction {
         ContentFactory contentFactory = ContentFactory.getInstance();
         Content content = contentFactory.createContent(consoleView.getComponent(), buildTabName(cmd), false);
         content.setTabColor(new JBColor(0x769AE5DC, 0x769AE5DC));
-        final Long myGroupId = 9999L;
+        final long myGroupId = 9999L;
         content.setExecutionId(myGroupId);
         if (terminal != null) {
             terminal.getContentManager().addContent(content);
@@ -225,7 +235,7 @@ public class ActionRun extends AnAction {
                 @Override
                 public void contentRemoved(@NotNull ContentManagerEvent event) {
                     //  区分terminal是否是自己创建的
-                    if (!myGroupId.equals(event.getContent().getExecutionId())) {
+                    if (myGroupId != event.getContent().getExecutionId()) {
                         return;
                     }
                     if (process.isAlive()) {
@@ -245,7 +255,7 @@ public class ActionRun extends AnAction {
                                 IdeaApiUtil.myWarn(html);
                             }
                         } catch (InterruptedException e) {
-                            logger.error("终端页关闭异常. " + e.toString());
+                            logger.error("终端页关闭异常. " + e);
                             throw new RuntimeException(e);
                         }
                     } else {

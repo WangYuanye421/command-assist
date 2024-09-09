@@ -20,8 +20,6 @@ import com.wangyuanye.plugin.util.MyTableUtil;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellEditor;
@@ -29,6 +27,8 @@ import javax.swing.table.TableColumn;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * 插件窗口
@@ -125,7 +125,10 @@ public final class CommandTab implements Disposable {
                         label.setText(text.substring(0, 30) + "...");
                     }
                     // 悬浮显示完整文本
-                    label.setToolTipText(text);
+                    logger.info("cmd美化前: " + text);
+                    String processed = beautyCmd(text);
+                    logger.info("cmd美化后: " + processed);
+                    label.setToolTipText(processed);
                 }
                 return label;
             }
@@ -188,26 +191,23 @@ public final class CommandTab implements Disposable {
             rightTool.add(button);  // 添加按钮到竖直工具栏
         }
         // 首次加载, 新增按钮的控制
-        if (schemasFromFile.size() > 0) {
+        if (!schemasFromFile.isEmpty()) {
             actionAddBtn.setEnabled(true);
         }
 
         // 监听选中行
-        commandTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-            @Override
-            public void valueChanged(ListSelectionEvent e) {
-                if (commandTable.getSelectedRow() != -1) {
-                    actionEditBtn.setEnabled(true);
-                    actionDelBtn.setEnabled(true);
-                    actionCopyBtn.setEnabled(true);
-                    actionRunBtn.setEnabled(true);
-                }
-                if (myCmdList.size() == 0) {
-                    actionEditBtn.setEnabled(false);
-                    actionDelBtn.setEnabled(false);
-                    actionCopyBtn.setEnabled(false);
-                    actionRunBtn.setEnabled(false);
-                }
+        commandTable.getSelectionModel().addListSelectionListener(e -> {
+            if (commandTable.getSelectedRow() != -1) {
+                actionEditBtn.setEnabled(true);
+                actionDelBtn.setEnabled(true);
+                actionCopyBtn.setEnabled(true);
+                actionRunBtn.setEnabled(true);
+            }
+            if (myCmdList.isEmpty()) {
+                actionEditBtn.setEnabled(false);
+                actionDelBtn.setEnabled(false);
+                actionCopyBtn.setEnabled(false);
+                actionRunBtn.setEnabled(false);
             }
         });
 
@@ -226,6 +226,30 @@ public final class CommandTab implements Disposable {
         return new TabInfo(commandsPanel).setText(CommandTab.TAB_NAME);
     }
 
+    private String beautyCmd(String cmd) {
+        // lsof -i:{%Parm%}
+        // 正则表达式来匹配 {%Parm%} 格式的占位符
+        Pattern pattern = Pattern.compile("\\{%([a-zA-Z0-9_]+)%}");
+        Matcher matcher = pattern.matcher(cmd);
+        while (matcher.find()) {
+            // 获取占位符中的参数名
+            String actual = "<i style='color:1C75CFFF;'>" + matcher.group(1) + "</i>";
+            cmd = cmd.replace(matcher.group(0), actual);
+        }
+        String[] split = cmd.split("&&");
+        StringBuilder sb = new StringBuilder("<html><code>");
+        for (int i = 0; i < split.length; i++) {
+            if (i == 0) {
+                sb.append(split[i]);
+            } else {
+                sb.append("<br>");
+                sb.append("&&").append(split[i]);
+            }
+        }
+        sb.append("</code></html>");
+        return sb.toString();
+    }
+
     private void editSelectedCommand() {
         stopEditing(commandTable);
         int selectedIndex = commandTable.getSelectedRow();
@@ -240,7 +264,7 @@ public final class CommandTab implements Disposable {
         if (!dialog.showAndGet()) {
             return;
         }
-        logger.info("cmd edit. cmd:" + myCmdEdit.toString());
+        logger.info("cmd edit. cmd:" + myCmdEdit);
         myCmdList.set(selectedIndex, myCmdEdit);
         cmdService.updateCmd(myCmdEdit);// db
         cmdModel.fireTableRowsUpdated(selectedIndex, selectedIndex);
