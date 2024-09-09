@@ -153,6 +153,18 @@ public class ActionRun extends AnAction {
         return (String) model.getValueAt(selectedRow, 0);
     }
 
+    private String decideWinShellPath() {
+        String shellPath = "cmd.exe";
+        String pathContent = System.getenv().toString();
+        if (pathContent.contains("powerShell") && !pathContent.contains("cmd.exe")) {
+            shellPath = "powerShell.exe";
+        }
+        if (pathContent.contains("powershell") && pathContent.contains("cmd.exe")) {
+            shellPath = "powerShell.exe";// 同时包含,优先使用powershell
+        }
+        return shellPath;
+    }
+
     // 使用consoleView
     private void doRun2(Project project, Map<String, String> cmdMap, AtomicBoolean sudoFlag) {
         String cmd = cmdMap.get("result");
@@ -161,19 +173,24 @@ public class ActionRun extends AnAction {
             logger.error("Project basePath is null");
             return;
         }
+        GeneralCommandLine commandLine = new GeneralCommandLine();
         String shellPath = "/bin/sh";
+
         String os = System.getProperty("os.name");
         logger.info("当前用户os : " + os);
         if (os.toLowerCase().contains("mac")) {
             shellPath = "/bin/zsh";
+            commandLine.addParameter(shellPath);
+            commandLine.addParameter("-c");
+
         } else if (os.toLowerCase().contains("windows")) {
-            shellPath = "cmd.exe";
+            shellPath = decideWinShellPath();
+            commandLine.addParameter(shellPath);
+            commandLine.addParameter("/c");
         }
-        GeneralCommandLine commandLine = new GeneralCommandLine(shellPath);
         // 默认当前项目
         commandLine.setWorkDirectory(basePath);
         commandLine.setCharset(StandardCharsets.UTF_8);
-        commandLine.addParameter("-c");
         commandLine.addParameter(cmd);
         OSProcessHandler processHandler;
         try {

@@ -1,6 +1,7 @@
 import org.jetbrains.changelog.Changelog
 import org.jetbrains.changelog.markdownToHTML
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+import java.util.Properties
 /**
  * 层级结构:
  *  - plugins  Gradle 插件,扩展 Gradle 的功能,该文件中,每个插件类似一个命名空间
@@ -103,11 +104,10 @@ intellijPlatform {
         password = providers.environmentVariable("PRIVATE_KEY_PASSWORD")
     }
 
+
+
     publishing {
-        token = providers.environmentVariable("PUBLISH_TOKEN")
-        // The pluginVersion is based on the SemVer (https://semver.org) and supports pre-release labels, like 2.1.7-alpha.3
-        // Specify pre-release label to publish the plugin in a custom Release Channel automatically. Read more:
-        // https://plugins.jetbrains.com/docs/intellij/deployment.html#specifying-a-release-channel
+        token = getCustomProperty("publishToken")
         channels = providers.gradleProperty("pluginVersion").map { listOf(it.substringAfter('-', "").substringBefore('.').ifEmpty { "default" }) }
     }
 
@@ -115,6 +115,20 @@ intellijPlatform {
         ides {
             recommended()
         }
+    }
+}
+
+// 定义一个函数，用于从自定义文件中读取属性
+fun getCustomProperty(propertyName: String): String {
+    val propertiesFile = file("./my_token.properties") // 指定你的自定义文件路径
+    if (propertiesFile.exists()) {
+        val props = Properties().apply {
+            propertiesFile.inputStream().use { load(it) }
+        }
+        return props.getProperty(propertyName)
+            ?: throw GradleException("Property '$propertyName' not found in config.properties")
+    } else {
+        throw GradleException("配置文件 config.properties 不存在!")
     }
 }
 
