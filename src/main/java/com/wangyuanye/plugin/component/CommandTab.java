@@ -102,9 +102,7 @@ public final class CommandTab implements Disposable {
         for (ActionButton button : buttonList) {
             button.setEnabled(false);
         }
-        if (!schemasFromFile.isEmpty()) {
-            actionAddBtn.setEnabled(true);
-        }
+        actionAddBtn.setEnabled(true);
     }
 
     public TabInfo buildCommandTab(JBTabs jbTabs, SchemaTab schemaTab) {

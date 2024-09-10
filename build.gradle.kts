@@ -31,7 +31,13 @@ kotlin {
 // Configure project's dependencies
 repositories {
     mavenCentral()
-
+    google()
+    // 或者使用阿里云的 Maven 镜像，加速依赖下载
+    gradlePluginPortal() // Gradle 插件默认仓库
+    maven {
+        url = uri("https://maven.aliyun.com/repository/public")
+        url = uri("https://www.jetbrains.com/intellij-repository/releases") // JetBrains 仓库
+    }
     // IntelliJ Platform Gradle Plugin Repositories Extension - read more: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-repositories-extension.html
     intellijPlatform {
         defaultRepositories()

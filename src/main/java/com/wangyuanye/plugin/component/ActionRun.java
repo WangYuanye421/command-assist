@@ -28,6 +28,7 @@ import com.wangyuanye.plugin.util.MessagesUtil;
 import com.wangyuanye.plugin.util.UiUtil;
 import org.jetbrains.annotations.NotNull;
 
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -155,12 +156,16 @@ public class ActionRun extends AnAction {
 
     private String decideWinShellPath() {
         String shellPath = "cmd.exe";
-        String pathContent = System.getenv().toString();
-        if (pathContent.contains("powerShell") && !pathContent.contains("cmd.exe")) {
-            shellPath = "powerShell.exe";
+        String path = System.getenv("PATH");
+        String[] split = path.split(";");
+        String powershell = "";
+        for (int i = 0; i < split.length; i++) {
+            if (split[i].contains("PowerShell")) {
+                powershell = split[i];
+            }
         }
-        if (pathContent.contains("powershell") && pathContent.contains("cmd.exe")) {
-            shellPath = "powerShell.exe";// 同时包含,优先使用powershell
+        if (!powershell.isEmpty()) { // 是否包含powershell，优先使用
+            shellPath = powershell + "powershell.exe";
         }
         return shellPath;
     }
@@ -174,24 +179,25 @@ public class ActionRun extends AnAction {
             return;
         }
         GeneralCommandLine commandLine = new GeneralCommandLine();
-        String shellPath = "/bin/sh";
-
-        String os = System.getProperty("os.name");
-        logger.info("当前用户os : " + os);
-        if (os.toLowerCase().contains("mac")) {
-            shellPath = "/bin/zsh";
-            commandLine.addParameter(shellPath);
-            commandLine.addParameter("-c");
-
-        } else if (os.toLowerCase().contains("windows")) {
-            shellPath = decideWinShellPath();
-            commandLine.addParameter(shellPath);
-            commandLine.addParameter("/c");
-        }
+        String shellPath = "/bin/bash";
         // 默认当前项目
         commandLine.setWorkDirectory(basePath);
         commandLine.setCharset(StandardCharsets.UTF_8);
-        commandLine.addParameter(cmd);
+        commandLine.withEnvironment("PATH", System.getenv("PATH"));
+        System.out.println("charset  " + Charset.defaultCharset());
+        String os = System.getProperty("os.name");
+        logger.info("当前用户os : " + os);
+        if (os.toLowerCase().contains("windows")) {
+            shellPath = decideWinShellPath();// 获取执行程序的路径
+            //shellPath = "cmd.exe";
+            commandLine.addParameter("/c");
+            commandLine.setCharset(Charset.forName("GBK"));
+            commandLine.addParameter(cmd);
+        } else {
+            commandLine.addParameter("-c");
+            commandLine.addParameter(cmd);
+        }
+        commandLine.setExePath(shellPath);
         OSProcessHandler processHandler;
         try {
             processHandler = new OSProcessHandler(commandLine);

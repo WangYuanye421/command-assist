@@ -2,9 +2,18 @@ package com.wangyuanye.plugin;
 
 import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.externalSystem.autoimport.ProjectSettingsTracker;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectCoreUtil;
+import com.intellij.openapi.project.ProjectManager;
+import com.intellij.openapi.project.impl.ProjectMacrosUtil;
+import com.intellij.testFramework.ProjectExtension;
 import com.intellij.testFramework.fixtures.BasePlatformTestCase;
 import com.wangyuanye.plugin.dao.SchemaDataSave;
 import com.wangyuanye.plugin.dao.dto.MySchema;
+
+import java.util.Map;
+import java.util.Properties;
 
 /**
  * @author wangyuanye
@@ -39,8 +48,6 @@ public class SchemaTest extends BasePlatformTestCase {
     }
 
     public void testIdeaConfig(){
-        PropertiesComponent propertiesComponent = PropertiesComponent.getInstance();
-        String shellPath = propertiesComponent.getValue("TerminalProjectOptionsProvider.shellPath");
-        System.out.println("Shell Path: " + shellPath);
+
     }
 }
