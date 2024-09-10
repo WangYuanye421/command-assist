@@ -188,10 +188,7 @@ public final class CommandTab implements Disposable {
             button.setEnabled(false);
             rightTool.add(button);  // 添加按钮到竖直工具栏
         }
-        // 首次加载, 新增按钮的控制
-        if (!schemasFromFile.isEmpty()) {
-            actionAddBtn.setEnabled(true);
-        }
+        actionAddBtn.setEnabled(true);
 
         // 监听选中行
         commandTable.getSelectionModel().addListSelectionListener(e -> {
