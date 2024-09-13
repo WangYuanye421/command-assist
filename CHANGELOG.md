@@ -1,17 +1,22 @@
 # Changelog
 
 ## [Unreleased]
+
 ## [1.2.2]
+
 ### Add
+
 - Add command preview in command table 命令表格中新增命令预览
 - Add shell path setting 新增shell path配置
 
 ### Updated
+
 - Updated the command dialog,saving command with format now 命令支持格式保存
-### Fixed
 
 ## [1.2.1]
+
 ### Fixed
+
 - Fix the problem that the command execute on Windows
 - Fix the Add_button can not be clicked
 
@@ -39,4 +44,9 @@
 
 - command assist first version 第一版发布
 
-
+[Unreleased]: /compare/v1.2.2...HEAD
+[1.2.2]: /compare/v1.2.1...v1.2.2
+[1.2.1]: /compare/v1.2.0...v1.2.1
+[1.2.0]: /compare/v1.1.0...v1.2.0
+[1.1.0]: /compare/v1.0.0...v1.1.0
+[1.0.0]: /commits/v1.0.0

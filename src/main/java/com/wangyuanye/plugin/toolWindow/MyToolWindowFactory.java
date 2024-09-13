@@ -35,9 +35,9 @@ public class MyToolWindowFactory implements ToolWindowFactory {
         logger.debug("debug current project : " + project.getName());
         //执行插件
         pluginWindow.initToolWindow(toolWindow, project);
-        ToolWindow openTerminal = UiUtil.getOpenTerminal(IdeaApiUtil.getProject());
-        if (openTerminal != null) {
-            openTerminal.activate(null);
-        }
+//        ToolWindow openTerminal = UiUtil.getOpenTerminal(IdeaApiUtil.getProject());
+//        if (openTerminal != null) {
+//            openTerminal.activate(null);
+//        }
     }
 }
