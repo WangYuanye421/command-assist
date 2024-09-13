@@ -9,9 +9,15 @@ import com.intellij.execution.process.ProcessEvent;
 import com.intellij.execution.ui.ConsoleView;
 import com.intellij.execution.ui.ConsoleViewContentType;
 import com.intellij.icons.AllIcons;
+import com.intellij.ide.BrowserUtil;
+import com.intellij.notification.Notification;
+import com.intellij.notification.NotificationGroupManager;
+import com.intellij.notification.NotificationListener;
+import com.intellij.notification.NotificationType;
 import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Key;
@@ -23,11 +29,12 @@ import com.intellij.ui.content.ContentFactory;
 import com.intellij.ui.content.ContentManagerEvent;
 import com.intellij.ui.content.ContentManagerListener;
 import com.intellij.ui.table.JBTable;
+import com.wangyuanye.plugin.config.ConfigPersistent;
 import com.wangyuanye.plugin.util.IdeaApiUtil;
 import com.wangyuanye.plugin.util.MessagesUtil;
-import com.wangyuanye.plugin.util.UiUtil;
 import org.jetbrains.annotations.NotNull;
 
+import javax.swing.event.HyperlinkEvent;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -36,6 +43,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static com.wangyuanye.plugin.util.IdeaApiUtil.getProject;
 
 /**
  * @author wangyuanye
@@ -59,36 +68,28 @@ public class ActionRun extends AnAction {
         return ActionUpdateThread.EDT; // fix `ActionUpdateThread.OLD_EDT` is deprecated
     }
 
-
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
-        Project project = IdeaApiUtil.getProject();
+        Project project = getProject();
         run(project);
     }
 
-
-    // 方式一: 使用默认终端
+    // 使用consoleView 终端
     private void run(Project project) {
-        String cmd = getSelectCmd();
+        String cmd = getSelectCmd(); // 获取选中的cmd
         if (cmd == null || cmd.isEmpty()) return;
-        logger.info("原始 cmd : " + cmd);
         AtomicBoolean sudoFlag = new AtomicBoolean(false);
-        Map<String, String> cmdMap = processCmd(cmd, sudoFlag);
-        logger.info("处理后 cmd : " + cmd);
+        Map<String, String> cmdMap = processCmd(cmd, sudoFlag); // 处理cmd
         String cancel = cmdMap.get("cancel");
         if (cancel != null) {
             return;
         }
-        doRun2(project, cmdMap, sudoFlag);
+        doRun(project, cmdMap, sudoFlag); // 执行cmd
     }
 
-    private void doRun(Project project, String cmd) {
-        // 获取终端
-        ToolWindow openTerminal = UiUtil.getOpenTerminal(IdeaApiUtil.getProject());
-        runInTerminal(project, cmd, openTerminal);
-    }
-
+    // 参数处理
     private Map<String, String> processCmd(String cmd, AtomicBoolean sudoFlag) {
+        logger.info("原始 cmd : " + cmd);
         Map<String, String> resultMap = new HashMap<>();
         String result = cmd;
         // lsof -i:{%Parm%}
@@ -130,22 +131,15 @@ public class ActionRun extends AnAction {
             resultMap.put("no_pwd", temp.replace("\\n", " ").replace("\\", " "));
             // 处理sudo
             if (sudoFlag.get()) {
-
                 String sudoAccess = "echo " + map.get("sudo") + "|" + " sudo -S -v 2>/dev/null && ";//缓存sudo权限
                 result = result.replaceAll("sudo", sudoAccess);
             }
         }
-        // 移除 \ 和 \n
-        result = result.replace("\\n", " ").replace("\\", " ");
+        // 移除 换行符
+        result = result.replace("\n", " ");
         resultMap.put("result", result);
+        logger.info("处理后 cmd : " + result);
         return resultMap;
-    }
-
-    private void runInTerminal(@NotNull Project project, String cmd, ToolWindow openTerminal) {
-        // 复制
-        MessagesUtil.setClipboardContent(cmd);
-        // 粘贴至终端
-        MessagesUtil.pastToTerminal(project, openTerminal);
     }
 
     private String getSelectCmd() {
@@ -154,6 +148,65 @@ public class ActionRun extends AnAction {
         return (String) model.getValueAt(selectedRow, 0);
     }
 
+    // 使用consoleView
+    private void doRun(Project project, Map<String, String> cmdMap, AtomicBoolean sudoFlag) {
+        String basePath = project.getBasePath();
+        if (basePath == null) {
+            logger.error("Project basePath is null");
+            return;
+        }
+        String cmd = cmdMap.get("result");
+        String shellPath = getShellPath();
+        String systemPath = getSystemPath();
+        GeneralCommandLine commandLine = buildCommandLine(shellPath, systemPath, basePath, cmd);
+        OSProcessHandler processHandler;
+        try {
+            processHandler = new OSProcessHandler(commandLine);
+        } catch (ExecutionException e) {
+            logger.error(e.toString());
+            throw new RuntimeException(e);
+        }
+        // 获取进程ID
+        final Process process = processHandler.getProcess();
+        long pid = process.pid();
+        ConsoleView consoleView = TextConsoleBuilderFactory.getInstance().createBuilder(project).getConsole();
+        // 自定义终端输出
+        formatConsoleView(cmdMap, sudoFlag, consoleView, commandLine, pid, cmd);
+        // 构建终端tab
+        buildTerminalTab(project, consoleView, cmd, process, pid);
+        // 监听终端输出
+        listeningConsole(processHandler, shellPath, consoleView);
+        processHandler.startNotify();
+    }
+
+    private String getShellPath() {
+        // 是否已配置
+        String shellConfig = getShellConfig();
+        if (!shellConfig.isEmpty()) {
+            return shellConfig;
+        }
+        String shellPath = "/bin/bash";// 默认
+        String os = System.getProperty("os.name");
+        if (os.toLowerCase().contains("windows")) {
+            shellPath = decideWinShellPath();
+        }
+        logger.info("shellConfig : " + shellConfig + ", func return : " + shellPath);
+        return shellPath;
+    }
+
+    private String getSystemPath(){
+        String path = System.getenv("PATH");
+        ConfigPersistent configPersistent = ApplicationManager.getApplication().getService(ConfigPersistent.class);
+        if (configPersistent.getState() != null && !configPersistent.getState().getPath().isEmpty()) {
+            path = configPersistent.getState().getPath();
+        }
+        if (path.equals(System.getenv("PATH"))) {
+            IdeaApiUtil.myWarn(MessagesUtil.getMessage("config.sys.path"));
+        }
+        return path;
+    }
+
+    // 获取Windows shell
     private String decideWinShellPath() {
         String shellPath = "cmd.exe";
         String path = System.getenv("PATH");
@@ -170,26 +223,26 @@ public class ActionRun extends AnAction {
         return shellPath;
     }
 
-    // 使用consoleView
-    private void doRun2(Project project, Map<String, String> cmdMap, AtomicBoolean sudoFlag) {
-        String cmd = cmdMap.get("result");
-        String basePath = project.getBasePath();
-        if (basePath == null) {
-            logger.error("Project basePath is null");
-            return;
+    // 获取配置的shellPath
+    private String getShellConfig() {
+        String path = "";
+        ConfigPersistent configPersistent = ApplicationManager.getApplication().getService(ConfigPersistent.class);
+        if (configPersistent.getState() != null) {
+            path = configPersistent.getState().getShellPath();
         }
+        if (path.isEmpty()) {
+            IdeaApiUtil.myWarn(MessagesUtil.getMessage("config.shell.path"));
+        }
+        return path;
+    }
+
+    private GeneralCommandLine buildCommandLine(String shellPath, String systemPath, String workDir, String cmd) {
         GeneralCommandLine commandLine = new GeneralCommandLine();
-        String shellPath = "/bin/bash";
-        // 默认当前项目
-        commandLine.setWorkDirectory(basePath);
+        commandLine.setWorkDirectory(workDir);
         commandLine.setCharset(StandardCharsets.UTF_8);
-        commandLine.withEnvironment("PATH", System.getenv("PATH"));
-        System.out.println("charset  " + Charset.defaultCharset());
+        commandLine.withEnvironment("PATH", systemPath);
         String os = System.getProperty("os.name");
-        logger.info("当前用户os : " + os);
         if (os.toLowerCase().contains("windows")) {
-            shellPath = decideWinShellPath();// 获取执行程序的路径
-            //shellPath = "cmd.exe";
             commandLine.addParameter("/c");
             commandLine.setCharset(Charset.forName("GBK"));
             commandLine.addParameter(cmd);
@@ -198,37 +251,22 @@ public class ActionRun extends AnAction {
             commandLine.addParameter(cmd);
         }
         commandLine.setExePath(shellPath);
-        OSProcessHandler processHandler;
-        try {
-            processHandler = new OSProcessHandler(commandLine);
-        } catch (ExecutionException e) {
-            logger.error(e.toString());
-            throw new RuntimeException(e);
-        }
-        // 获取进程ID
-        final Process process = processHandler.getProcess();
-        long pid = process.pid();
-        ConsoleView consoleView = TextConsoleBuilderFactory.getInstance().createBuilder(project).getConsole();
-        consoleView.print("Command Assist: \n", ConsoleViewContentType.SYSTEM_OUTPUT);
-        consoleView.print("     dir: " + commandLine.getWorkDirectory() + "\n", ConsoleViewContentType.SYSTEM_OUTPUT);
-        consoleView.print("     pid: " + pid + "\n", ConsoleViewContentType.SYSTEM_OUTPUT);
-        if (sudoFlag.get()) {
-            String noPwd = cmdMap.get("no_pwd");
-            consoleView.print("     cmd: " + noPwd + "\n", ConsoleViewContentType.SYSTEM_OUTPUT);
-        } else {
-            consoleView.print("     cmd: " + cmd + "\n", ConsoleViewContentType.SYSTEM_OUTPUT);
-        }
-        consoleView.print("--------------------------------------------------------------",
-                ConsoleViewContentType.SYSTEM_OUTPUT);
-        consoleView.print(" \n", ConsoleViewContentType.SYSTEM_OUTPUT);
+        logger.info("当前用户os: " + os + ",构建的commandLine: " + commandLine.getCommandLineString());
+        logger.info("sys path: " + commandLine.getEnvironment().get("PATH"));
+        return commandLine;
+    }
+
+    private void listeningConsole(OSProcessHandler processHandler, String shellPath, ConsoleView consoleView) {
         processHandler.addProcessListener(new ProcessAdapter() {
             // 监听输出
             @Override
             public void onTextAvailable(@NotNull ProcessEvent event, @NotNull Key outputType) {
+                logger.info("Command Assist 终端输出 : " + event.getText());
                 String text = event.getText();
-                if (!text.startsWith(commandLine.getExePath())) {
-                    consoleView.print(text, ConsoleViewContentType.SYSTEM_OUTPUT);
+                if (text.startsWith(shellPath) && !text.contains("command not found")) {
+                    return;
                 }
+                consoleView.print(text, ConsoleViewContentType.SYSTEM_OUTPUT);
             }
 
             // 监听终止事件
@@ -240,7 +278,9 @@ public class ActionRun extends AnAction {
                         ConsoleViewContentType.SYSTEM_OUTPUT);
             }
         });
+    }
 
+    private void buildTerminalTab(Project project, ConsoleView consoleView, String cmd, Process process, long pid) {
         ToolWindowManager toolWindowManager = ToolWindowManager.getInstance(project);
         ToolWindow terminal = toolWindowManager.getToolWindow("Terminal");
         ContentFactory contentFactory = ContentFactory.getInstance();
@@ -253,46 +293,64 @@ public class ActionRun extends AnAction {
             // 确保新创建的标签页可见并选中
             terminal.getContentManager().setSelectedContent(content);
             terminal.activate(null);
-
-            terminal.addContentManagerListener(new ContentManagerListener() {
-                @Override
-                public void contentRemoved(@NotNull ContentManagerEvent event) {
-                    //  区分terminal是否是自己创建的
-                    if (myGroupId != event.getContent().getExecutionId()) {
-                        return;
-                    }
-                    if (process.isAlive()) {
-                        process.destroyForcibly();
-                        try {
-                            boolean terminated = process.waitFor(5, TimeUnit.SECONDS);
-                            if (terminated) {
-                                IdeaApiUtil.myTips(MessagesUtil.getMessage("terminal.close.success"));
-                            } else {
-                                String html = "<html><br>"
-                                        + buildTabName(cmd)
-                                        + "<br>"
-                                        + MessagesUtil.getMessage("terminal.close.fail")
-                                        + "<br>"
-                                        + "pid : " + pid
-                                        + "</html>";
-                                IdeaApiUtil.myWarn(html);
-                            }
-                        } catch (InterruptedException e) {
-                            logger.error("终端页关闭异常. " + e);
-                            throw new RuntimeException(e);
-                        }
-                    } else {
-                        IdeaApiUtil.myTips(MessagesUtil.getMessage("terminal.close.success"));
-                    }
-                }
-            });
-
+            // 提示
+            noticeOnTabClose(terminal, myGroupId, process, cmd, pid);
         } else {
             logger.error("terminal 为null");
         }
-        processHandler.startNotify();
     }
 
+    private void noticeOnTabClose(ToolWindow terminal, long myGroupId, Process process, String cmd, long pid) {
+        terminal.addContentManagerListener(new ContentManagerListener() {
+            @Override
+            public void contentRemoved(@NotNull ContentManagerEvent event) {
+                //  区分terminal是否是自己创建的
+                if (myGroupId != event.getContent().getExecutionId()) {
+                    return;
+                }
+                if (process.isAlive()) {
+                    process.destroyForcibly();
+                    try {
+                        boolean terminated = process.waitFor(5, TimeUnit.SECONDS);
+                        if (terminated) {
+                            IdeaApiUtil.myTips(MessagesUtil.getMessage("terminal.close.success"));
+                        } else {
+                            String html = "<html><br>"
+                                    + buildTabName(cmd)
+                                    + "<br>"
+                                    + MessagesUtil.getMessage("terminal.close.fail")
+                                    + "<br>"
+                                    + "pid : " + pid
+                                    + "</html>";
+                            IdeaApiUtil.myWarn(html);
+                        }
+                    } catch (InterruptedException e) {
+                        logger.error("终端页关闭异常. " + e);
+                        throw new RuntimeException(e);
+                    }
+                } else {
+                    IdeaApiUtil.myTips(MessagesUtil.getMessage("terminal.close.success"));
+                }
+            }
+        });
+    }
+
+    private void formatConsoleView(Map<String, String> cmdMap, AtomicBoolean sudoFlag, ConsoleView consoleView,
+                                   GeneralCommandLine commandLine, long pid, String cmd) {
+        consoleView.print("Command Assist: \n", ConsoleViewContentType.SYSTEM_OUTPUT);
+        consoleView.print("   shell: " + commandLine.getExePath() + "\n", ConsoleViewContentType.SYSTEM_OUTPUT);
+        consoleView.print("   dir  : " + commandLine.getWorkDirectory() + "\n", ConsoleViewContentType.SYSTEM_OUTPUT);
+        consoleView.print("   pid  : " + pid + "\n", ConsoleViewContentType.SYSTEM_OUTPUT);
+        if (sudoFlag.get()) {
+            String noPwd = cmdMap.get("no_pwd");
+            consoleView.print("   cmd  : " + noPwd + "\n", ConsoleViewContentType.SYSTEM_OUTPUT);
+        } else {
+            consoleView.print("   cmd  : " + cmd + "\n", ConsoleViewContentType.SYSTEM_OUTPUT);
+        }
+        consoleView.print("--------------------------------------------------------------",
+                ConsoleViewContentType.SYSTEM_OUTPUT);
+        consoleView.print(" \n\n", ConsoleViewContentType.SYSTEM_OUTPUT);
+    }
 
     private String buildTabName(String cmd) {
         if (cmd.length() <= 10) {

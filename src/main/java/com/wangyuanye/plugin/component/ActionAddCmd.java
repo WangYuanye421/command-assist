@@ -55,7 +55,7 @@ public class ActionAddCmd extends AnAction {
     }
 
     @Override
-    public void actionPerformed(AnActionEvent e) {
+    public void actionPerformed(@NotNull AnActionEvent e) {
         CommandTab.stopEditing(commandTable);
         MySchema selectedItem = (MySchema) schemaComboBox.getComboBox().getSelectedItem();
         if (selectedItem == null || selectedItem.getId() == null) {

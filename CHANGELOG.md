@@ -1,6 +1,15 @@
 # Changelog
 
 ## [Unreleased]
+## [1.2.2]
+### Add
+- Add command preview in command table 命令表格中新增命令预览
+- Add shell path setting 新增shell path配置
+
+### Updated
+- Updated the command dialog,saving command with format now 命令支持格式保存
+### Fixed
+
 ## [1.2.1]
 ### Fixed
 - Fix the problem that the command execute on Windows

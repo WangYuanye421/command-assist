@@ -10,7 +10,6 @@
 
 	<actions>
 		<!-- 定义操作 -->
-
 		<!--编辑分类-->
 		<action id="ca_edit_schema" text="EditSchema"
 				class="com.wangyuanye.plugin.component.ActionManageSchema"/>
@@ -22,13 +21,6 @@
 				class="com.wangyuanye.plugin.component.ActionRun" keymap="$default">
 			<keyboard-shortcut keymap="$default" first-keystroke="meta ENTER"/>
 		</action>
-
-
-		<!-- 定义操作组 -->
-		<!--		<group id="command_group1" class="com.wangyuanye.plugin.component.toolbar.MyActionGroup" text="My Group1">-->
-		<!--			&lt;!&ndash; 追加到什么地方 &ndash;&gt;-->
-		<!--			&lt;!&ndash;<add-to-group group-id="ToolWindowContextMenu" anchor="first"/>&ndash;&gt;-->
-		<!--		</group>-->
 
 		<action id="tab_schema_close" class="com.wangyuanye.plugin.component.ActionCloseSchemaTab" text="Close Tab"/>
 
@@ -45,10 +37,12 @@
 
 	<extensions defaultExtensionNs="com.intellij">
 
-		<!--        插件配置页-->
-		<!--        <projectConfigurable instance="com.wangyuanye.plugin.setting.MyPluginConfigurable"-->
-		<!--                             displayName="My Plugin Settings"-->
-		<!--                             id = "com.wangyuanye.plugin" />-->
+		<!--插件配置页-->
+		        <projectConfigurable instance="com.wangyuanye.plugin.config.MyPluginConfigurable"
+		                             displayName="Command Assist Settings"
+		                             id = "com.wangyuanye.plugin.ca.config"
+									 parentId="tools"
+				/>
 		<!--插件入口程序-->
 		<toolWindow factoryClass="com.wangyuanye.plugin.toolWindow.MyToolWindowFactory"
 					id="Command Assist" icon="AllIcons.Toolwindows.ToolWindowCommander"

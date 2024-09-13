@@ -5,7 +5,6 @@ import com.intellij.openapi.actionSystem.ActionToolbarPosition;
 import com.intellij.openapi.actionSystem.Presentation;
 import com.intellij.openapi.actionSystem.impl.ActionButton;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.ui.DoubleClickListener;
 import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.table.JBTable;
 import com.intellij.ui.tabs.JBTabs;
@@ -20,11 +19,9 @@ import com.wangyuanye.plugin.util.MyTableUtil;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.JTableHeader;
-import javax.swing.table.TableCellEditor;
-import javax.swing.table.TableColumn;
+import javax.swing.table.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -60,6 +57,8 @@ public final class CommandTab implements Disposable {
     List<ActionButton> buttonList;
     ActionSchemaComboBox schemaComboBox;
     ActionManageSchema actionManageSchema;
+    private Popup currentTooltipPopup;
+    private Timer currentTooltipTimer;
 
 
     public CommandTab() {
@@ -70,7 +69,23 @@ public final class CommandTab implements Disposable {
         schemasFromFile = schemaService.list();
         myCmdList = cmdService.list(defaultSchema.getId());
         cmdModel = new MyCmdModel(myCmdList);
-        commandTable = new JBTable(cmdModel);
+        commandTable = new JBTable(cmdModel) { // 禁用单元格的自动预览
+            @Override
+            public @NotNull Component prepareRenderer(@NotNull TableCellRenderer renderer, int row, int column) {
+                Component c = super.prepareRenderer(renderer, row, column);
+                // 获取列的宽度和渲染组件的首选大小
+                int rendererWidth = c.getPreferredSize().width;
+                TableColumn tableColumn = getColumnModel().getColumn(column);
+                int tableColumnWidth = tableColumn.getWidth();
+
+                // 如果渲染器组件的宽度超过列宽，强制让它不要超出
+                if (rendererWidth > tableColumnWidth) {
+                    setToolTipText(null); // 禁用任何自动提示
+                    c.setPreferredSize(new Dimension(tableColumnWidth, c.getPreferredSize().height));
+                }
+                return c;
+            }
+        };
         tableConfig();
     }
 
@@ -108,36 +123,83 @@ public final class CommandTab implements Disposable {
     public TabInfo buildCommandTab(JBTabs jbTabs, SchemaTab schemaTab) {
         // Column "name"
         TableColumn columnName = commandTable.getColumnModel().getColumn(0);
-        columnName.setPreferredWidth(100);
-        columnName.setMinWidth(100);
-        columnName.setMaxWidth(500);
+        columnName.setPreferredWidth(200);
+        columnName.setMinWidth(200);
         columnName.setCellRenderer(new DefaultTableCellRenderer() {
             @Override
-            public Component getTableCellRendererComponent(JTable table, Object value,
-                                                           boolean isSelected, boolean hasFocus, int row, int column) {
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                 JLabel label = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                if (value != null) {
-                    String text = value.toString();
-                    // 限制文本长度，超过部分用省略号表示
-                    if (text.length() > 30) {
-                        label.setText(text.substring(0, 30) + "...");
-                    }
-                    // 悬浮显示完整文本
-                    logger.info("cmd美化前: " + text);
-                    String processed = beautyCmd(text);
-                    logger.info("cmd美化后: " + processed);
-                    label.setToolTipText(processed);
-                }
+                label.setToolTipText(null);  // 确保渲染器不会设置ToolTip
                 return label;
             }
         });
+        // 移除渲染器中的 toolTip 逻辑，仅保留文本截取
+//        columnName.setCellRenderer(new DefaultTableCellRenderer() {
+//            @Override
+//            public Component getTableCellRendererComponent(JTable table, Object value,
+//                                                           boolean isSelected, boolean hasFocus, int row, int column) {
+//                JLabel label = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+//                if (value != null) {
+//                    String text = value.toString();
+//                    // 限制文本长度，超过部分用省略号表示
+//                    if (text.length() > 30) {
+//                        label.setText(text.substring(0, 30) + "...");
+//                    }
+//                }
+//                return label;
+//            }
+//        });
+        // 添加鼠标监听器，单击单元格时显示完整文本
+        commandTable.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                int row = commandTable.rowAtPoint(e.getPoint());
+                int column = commandTable.columnAtPoint(e.getPoint());
+                if (row >= 0 && column == 0) {  // 仅处理第 0 列的点击
+                    Object value = commandTable.getValueAt(row, column);
+                    if (value != null) {
+                        String text = value.toString();
+                        String processed = beautyCmd(text);
+                        // 取消并隐藏之前的 Tooltip Popup
+                        if (currentTooltipPopup != null) {
+                            currentTooltipPopup.hide();
+                            currentTooltipPopup = null;
+                        }
+
+                        // 停止并取消之前的 Timer
+                        if (currentTooltipTimer != null) {
+                            currentTooltipTimer.stop();
+                            currentTooltipTimer = null;
+                        }
+                        // 创建并显示自定义的 Tooltip
+                        JToolTip toolTip = new JToolTip();
+                        toolTip.setTipText(processed);
+
+                        PopupFactory popupFactory = PopupFactory.getSharedInstance();
+                        Point location = e.getLocationOnScreen();  // 获取点击位置
+                        // 显示在鼠标点击位置
+                        currentTooltipPopup = popupFactory.getPopup(commandTable, toolTip, location.x, location.y + 20);
+                        currentTooltipPopup.show();
+
+                        // 创建新的 Timer 实例并设置隐藏 Tooltip
+                        currentTooltipTimer = new Timer(3000, evt -> {
+                            if (currentTooltipPopup != null) {
+                                currentTooltipPopup.hide();
+                                currentTooltipPopup = null;
+                            }
+                        });
+                        currentTooltipTimer.setRepeats(false);
+                        currentTooltipTimer.start();
+                    }
+                }
+            }
+        });
+
 
         // Column "remark"
         TableColumn remark = commandTable.getColumnModel().getColumn(1);
-        remark.setPreferredWidth(100);
-        remark.setMinWidth(100);
-        remark.setMaxWidth(200);
-
+        remark.setPreferredWidth(150);
+        remark.setMinWidth(150);
         JPanel commandsPanel = new JPanel(new BorderLayout());
         this.schemaComboBox = new ActionSchemaComboBox(schemasFromFile, this);// 分类下拉框
         this.actionManageSchema = new ActionManageSchema(jbTabs, schemaTab, schemaComboBox);// 分类管理按钮
@@ -209,14 +271,23 @@ public final class CommandTab implements Disposable {
         commandsPanel.add(topTool, BorderLayout.CENTER); // 上方工具栏
         commandsPanel.add(rightTool, BorderLayout.EAST); // 右侧竖型工具栏
 
-        // double-click in "Patterns" table should also start editing of selected pattern
-        new DoubleClickListener() {
-            @Override
-            protected boolean onDoubleClick(@NotNull MouseEvent e) {
-                editSelectedCommand();
-                return true;
-            }
-        }.installOn(commandTable);
+        // 双击预览
+//        new DoubleClickListener() {
+//            @Override
+//            protected boolean onDoubleClick(@NotNull MouseEvent e) {
+//                int selectedIndex = commandTable.getSelectedRow();
+//                if (selectedIndex < 0 || selectedIndex >= cmdModel.getRowCount()) {
+//                    return true;
+//                }
+//                MyCmd sourceMyCmd = myCmdList.get(selectedIndex);
+//                JToolTip toolTip = new JToolTip();
+//                toolTip.setEnabled(true);
+//                toolTip.setVisible(true);
+//                toolTip.setTipText("hhahah");
+//                //buildPreview(sourceMyCmd, commandTable);
+//                return true;
+//            }
+//        }.installOn(commandTable);
         //commandsPanel.setVisible(true);
         return new TabInfo(commandsPanel).setText(CommandTab.TAB_NAME);
     }
@@ -228,42 +299,13 @@ public final class CommandTab implements Disposable {
         Matcher matcher = pattern.matcher(cmd);
         while (matcher.find()) {
             // 获取占位符中的参数名
-            String actual = "<i style='color:1C75CFFF;'>" + matcher.group(1) + "</i>";
+            String actual = "<i style='color:#FA6B6BFF;'>" + matcher.group(1) + "</i>";
             cmd = cmd.replace(matcher.group(0), actual);
         }
-        String[] split = cmd.split("&&");
-        StringBuilder sb = new StringBuilder("<html><code>");
-        for (int i = 0; i < split.length; i++) {
-            if (i == 0) {
-                sb.append(split[i]);
-            } else {
-                sb.append("<br>");
-                sb.append("&&").append(split[i]);
-            }
-        }
-        sb.append("</code></html>");
+        StringBuilder sb = new StringBuilder("<html><pre>");
+        sb.append(cmd);
+        sb.append("</pre></html>");
         return sb.toString();
-    }
-
-    private void editSelectedCommand() {
-        stopEditing(commandTable);
-        int selectedIndex = commandTable.getSelectedRow();
-        if (selectedIndex < 0 || selectedIndex >= cmdModel.getRowCount()) {
-            return;
-        }
-        MyCmd sourceMyCmd = myCmdList.get(selectedIndex);
-        MyCmd myCmdEdit = sourceMyCmd.clone();
-        DialogMyCmd dialog = new DialogMyCmd(commandTable, myCmdEdit, selectedIndex, myCmdList);
-        IdeaApiUtil.setRelatedLocation(dialog);
-        dialog.setTitle(MessagesUtil.getMessage("cmd.dialog.edit.title"));
-        if (!dialog.showAndGet()) {
-            return;
-        }
-        logger.info("cmd edit. cmd:" + myCmdEdit);
-        myCmdList.set(selectedIndex, myCmdEdit);
-        cmdService.updateCmd(myCmdEdit);// db
-        cmdModel.fireTableRowsUpdated(selectedIndex, selectedIndex);
-        commandTable.getSelectionModel().setSelectionInterval(selectedIndex, selectedIndex);
     }
 
     public static void stopEditing(JBTable commandTable) {

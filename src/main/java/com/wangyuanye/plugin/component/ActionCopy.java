@@ -13,6 +13,7 @@ import com.intellij.ui.table.JBTable;
 import com.wangyuanye.plugin.util.MessagesUtil;
 import org.jetbrains.annotations.NotNull;
 
+import java.awt.*;
 import java.awt.event.InputEvent;
 import java.awt.event.MouseEvent;
 
@@ -53,7 +54,7 @@ public class ActionCopy extends AnAction {
             String cmd = (String) model.getValueAt(selectedRow, 0);
             // 复制
             MessagesUtil.setClipboardContent(cmd);
-            showMsg(mouseEvent, "已复制");
+            showMsg(mouseEvent, MessagesUtil.getMessage("cmd.toolbar.copy.copied"));
         }
 
     }
@@ -61,7 +62,9 @@ public class ActionCopy extends AnAction {
     private void showMsg(MouseEvent e, String message) {
         // 创建气泡提示
         Balloon balloon = JBPopupFactory.getInstance()
-                .createHtmlTextBalloonBuilder(message, null, JBColor.GREEN, null)
+                .createHtmlTextBalloonBuilder(message, null,
+                        new JBColor(new Color(160, 229, 153), new Color(160, 229, 153)),
+                        null)
                 .setFadeoutTime(3000)  // 设置气泡提示显示时间为3秒
                 .createBalloon();
 

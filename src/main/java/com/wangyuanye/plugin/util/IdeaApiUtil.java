@@ -2,14 +2,19 @@ package com.wangyuanye.plugin.util;
 
 import com.intellij.ide.ui.UISettings;
 import com.intellij.notification.Notification;
+import com.intellij.notification.NotificationGroupManager;
+import com.intellij.notification.NotificationListener;
 import com.intellij.notification.NotificationType;
+import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.colors.EditorColorsManager;
 import com.intellij.openapi.editor.colors.EditorColorsScheme;
+import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
+import com.intellij.ui.AnActionButton;
 import com.wangyuanye.plugin.dao.CmdDataSave;
 import com.wangyuanye.plugin.dao.SchemaDataSave;
 import com.wangyuanye.plugin.toolWindow.MyToolWindowFactory;
@@ -17,6 +22,7 @@ import com.wangyuanye.plugin.toolWindow.PluginWindow;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
+import javax.swing.event.HyperlinkEvent;
 import java.awt.*;
 
 
@@ -110,6 +116,20 @@ public class IdeaApiUtil {
     public static void myWarn(String tip) {
         Notification notification = getWarnNotification();
         notification.setContent(MessagesUtil.buildBalloon(tip));
+        notification.notify(getProject());
+    }
+
+    public static void myWarnWithSettingLink(String tip, String settingId) {
+        // 创建通知内容，包含 HTML 链接
+        Notification notification = getWarnNotification();
+        notification.setContent(MessagesUtil.buildBalloon(tip));
+        notification.addAction(new AnActionButton() {
+            @Override
+            public void actionPerformed(@NotNull AnActionEvent e) {
+                ShowSettingsUtil.getInstance().showSettingsDialog(getProject(), settingId);
+            }
+        });
+
         notification.notify(getProject());
     }
 

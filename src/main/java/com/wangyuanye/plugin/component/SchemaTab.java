@@ -7,7 +7,10 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
-import com.intellij.ui.*;
+import com.intellij.ui.AnActionButton;
+import com.intellij.ui.AnActionButtonRunnable;
+import com.intellij.ui.TableUtil;
+import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.table.JBTable;
 import com.intellij.ui.tabs.JBTabs;
 import com.intellij.ui.tabs.TabInfo;
@@ -18,13 +21,11 @@ import com.wangyuanye.plugin.toolWindow.MyToolWindowFactory;
 import com.wangyuanye.plugin.util.IdeaApiUtil;
 import com.wangyuanye.plugin.util.MessagesUtil;
 import com.wangyuanye.plugin.util.MyTableUtil;
-import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableColumn;
 import java.awt.*;
-import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -127,13 +128,13 @@ public class SchemaTab implements Disposable {
         schemasPanel.add(panel, BorderLayout.CENTER);
 
         // double-click
-        new DoubleClickListener() {
-            @Override
-            protected boolean onDoubleClick(@NotNull MouseEvent e) {
-                editSelectedSchema(combobox);
-                return true;
-            }
-        }.installOn(schemaTable);
+//        new DoubleClickListener() {
+//            @Override
+//            protected boolean onDoubleClick(@NotNull MouseEvent e) {
+//                editSelectedSchema(combobox);
+//                return true;
+//            }
+//        }.installOn(schemaTable);
         SwingUtilities.updateComponentTreeUI(panel);// UI主题变化,更新组件及子组件的UI
         return tabInfo.setText(SchemaTab.TAB_NAME);
     }

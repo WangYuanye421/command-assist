@@ -3,8 +3,9 @@ package com.wangyuanye.plugin.component;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.ValidationInfo;
+import com.intellij.ui.JBColor;
+import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.components.JBTextField;
-import com.intellij.ui.components.fields.ExpandableTextField;
 import com.intellij.util.ui.FormBuilder;
 import com.wangyuanye.plugin.dao.dto.MyCmd;
 import com.wangyuanye.plugin.util.MessagesUtil;
@@ -12,6 +13,8 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.util.Collections;
 import java.util.List;
 
@@ -21,26 +24,47 @@ import java.util.List;
  **/
 public class DialogMyCmd extends DialogWrapper {
     private final MyCmd myCmd;
-    private final ExpandableTextField cmdField;
+    private final JScrollPane scrollPane;
+    private final JTextArea cmdField;
     private final JBTextField remarkField;
     private final int myCmdIndex;
     private final List<MyCmd> myExistingMyCmdList;
     private final JLabel helpIcon;
-    private Component parent;
 
     DialogMyCmd(Component parent, MyCmd myCmd, int cmdIndex, List<MyCmd> existingMyCmdList) {
         super(parent, true);
-        this.parent = parent;
-        setSize(300, 120);
         myCmdIndex = cmdIndex;
         myExistingMyCmdList = existingMyCmdList;
         setTitle(MessagesUtil.getMessage("cmd.dialog.add.title"));
         setResizable(false);
         this.myCmd = myCmd;
-        cmdField = new ExpandableTextField();
+
+        // 初始化组件
+        cmdField = new JTextArea();
+        cmdField.setLineWrap(true);
+        cmdField.setWrapStyleWord(true);
         cmdField.setText(myCmd.getName());
 
-        remarkField = new JBTextField(this.myCmd.getRemark());
+        // 使用 JScrollPane 包裹 JTextArea
+        scrollPane = new JBScrollPane(cmdField);
+        scrollPane.setPreferredSize(new Dimension(300, 100)); // 设置尺寸
+
+        remarkField = new JBTextField();
+        remarkField.setText(myCmd.getRemark());
+        cmdField.addFocusListener(new FocusListener() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                cmdField.setBorder(BorderFactory.createLineBorder(new JBColor(
+                        new Color(156, 198, 243),
+                        new Color(71, 105, 139)), 2));  // 焦点时的边框样式
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+                cmdField.setBorder(remarkField.getBorder());  // 失去焦点后恢复默认边框
+            }
+        });
+
         helpIcon = new JLabel(AllIcons.General.ContextHelp);
         helpIcon.setToolTipText(MessagesUtil.getMessage("cmd.name_label_tip"));
         init();
@@ -78,20 +102,10 @@ public class DialogMyCmd extends DialogWrapper {
 
     @Override
     protected JComponent createCenterPanel() {
-        // 第一个文本框和提示标签
-        JPanel panel1 = new JPanel(new BorderLayout());
-        panel1.add(cmdField, BorderLayout.CENTER);
-        panel1.add(helpIcon, BorderLayout.EAST);
-
-        JPanel panel2 = new JPanel(new BorderLayout());
-        panel2.add(remarkField, BorderLayout.CENTER);
-        JLabel placeholder = new JLabel();
-        placeholder.setPreferredSize(helpIcon.getPreferredSize());
-        panel2.add(placeholder, BorderLayout.EAST);
-
+        // 使用 FormBuilder 来布局，确保每个组件有合适的标签和位置
         return FormBuilder.createFormBuilder()
-                .addLabeledComponent(MessagesUtil.getMessage("cmd.dialog.label_name"), panel1)
-                .addLabeledComponent(MessagesUtil.getMessage("cmd.dialog.label_remark"), panel2)
+                .addLabeledComponent("命令:", scrollPane) // 带滚动条的文本区域
+                .addLabeledComponent("备注:", remarkField) // 普通文本框
                 .getPanel();
     }
 }
