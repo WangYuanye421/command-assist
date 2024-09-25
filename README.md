@@ -1,6 +1,6 @@
 <div  align="center">
     <h2>Command Assist</h2>
-    <i>A Tool for managing commands in IntelliJ IDEA</i>
+    <i>A Tool for managing commands in IntelliJ IDEA</i><br/>
     <i>IDEA 命令管理插件</i>
     <div style="padding-bottom: var(-100px);">
     <img alt="Command Assist" height="300" src="src/main/resources/asset/Command_Assist.png" title="logo" width="300"/>
